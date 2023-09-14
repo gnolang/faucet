@@ -1,4 +1,4 @@
-package waiter
+package root
 
 import (
 	"context"
@@ -9,19 +9,20 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type WaitFunc func(ctx context.Context) error
+type waitFunc func(ctx context.Context) error
 
-// Waiter is a concept used for waiting on running services
-type Waiter struct {
+// waiter is a concept used for waiting on running services
+type waiter struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	waitFns []WaitFunc
+	waitFns []waitFunc
 }
 
-func New() *Waiter {
-	w := &Waiter{
-		waitFns: []WaitFunc{},
+// newWaiter creates a new waiter instance
+func newWaiter() *waiter {
+	w := &waiter{
+		waitFns: []waitFunc{},
 	}
 
 	w.ctx, w.cancel = signal.NotifyContext(
@@ -35,11 +36,13 @@ func New() *Waiter {
 	return w
 }
 
-func (w *Waiter) Add(fns ...WaitFunc) {
+// add adds a new wait service
+func (w *waiter) add(fns ...waitFunc) {
 	w.waitFns = append(w.waitFns, fns...)
 }
 
-func (w *Waiter) Wait() error {
+// wait blocks until all added wait services finish
+func (w *waiter) wait() error {
 	g, ctx := errgroup.WithContext(w.ctx)
 
 	g.Go(func() error {
@@ -60,12 +63,4 @@ func (w *Waiter) Wait() error {
 	}
 
 	return g.Wait()
-}
-
-func (w *Waiter) Context() context.Context {
-	return w.ctx
-}
-
-func (w *Waiter) CancelFunc() context.CancelFunc {
-	return w.cancel
 }

@@ -9,4 +9,7 @@ require (
 	golang.org/x/sync v0.3.0
 )
 
-require github.com/pelletier/go-toml v1.9.5 // indirect
+require (
+	github.com/gnolang/gno v0.0.0-20230914214026-ef6a55bf9db2 // indirect
+	github.com/pelletier/go-toml v1.9.5 // indirect
+)

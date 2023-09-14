@@ -1,3 +1,5 @@
+github.com/gnolang/gno v0.0.0-20230914214026-ef6a55bf9db2 h1:/j3GhCiNnE04Yc+zF+ouY7sZuopGwYx6R9NPipSVVLE=
+github.com/gnolang/gno v0.0.0-20230914214026-ef6a55bf9db2/go.mod h1:dtwSoPiPCcGxACg4y2iJVWZ/vuU133n4kwF28mx6Krg=
 github.com/go-chi/chi/v5 v5.0.10 h1:rLz5avzKpjqxrYwXNfmjkrYYXOyLJd37pz53UFHC6vk=
 github.com/go-chi/chi/v5 v5.0.10/go.mod h1:DslCQbL2OYiznFReuXYUmQ2hGd1aDpCnlMNITLSKoi8=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=

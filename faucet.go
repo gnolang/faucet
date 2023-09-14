@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/gnolang/faucet/config"
+	"github.com/gnolang/faucet/estimate"
+	"github.com/gnolang/faucet/log"
+	"github.com/gnolang/faucet/log/nul"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
@@ -15,8 +18,8 @@ import (
 
 // Faucet is a standard Gno faucet
 type Faucet struct {
-	estimator Estimator // gas pricing estimations
-	logger    Logger    // log feedback
+	estimator estimate.Estimator // gas pricing estimations
+	logger    log.Logger         // log feedback
 
 	mux *chi.Mux // HTTP routing
 
@@ -26,12 +29,12 @@ type Faucet struct {
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
-func NewFaucet(opts ...Option) (*Faucet, error) {
+func NewFaucet(estimator estimate.Estimator, opts ...Option) (*Faucet, error) {
 	f := &Faucet{
-		estimator:   nil, // TODO static estimator
-		logger:      nil, // TODO nil logger
+		estimator:   estimator,
+		logger:      nul.New(),
 		config:      config.DefaultConfig(),
-		middlewares: nil,
+		middlewares: nil, // no middlewares by default
 		handlers:    nil, // TODO single default handler
 
 		mux: chi.NewMux(),

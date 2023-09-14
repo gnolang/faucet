@@ -5,10 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/gnolang/faucet"
 	"github.com/gnolang/faucet/config"
-	"github.com/gnolang/faucet/waiter"
+	"github.com/gnolang/faucet/estimate/static"
+	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/pelletier/go-toml"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -126,20 +128,35 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 		c.CORSConfig = corsConfig
 	}
 
-	// Create a new faucet
-	f, err := faucet.NewFaucet()
+	// Parse static gas values.
+	// It is worth noting that this is temporary,
+	// and will be removed once gas estimation is enabled
+	// on Gno.land
+	gasFee, err := std.ParseCoins(c.GasFee)
+	if err != nil {
+		return fmt.Errorf("invalid gas fee, %w", err)
+	}
+
+	gasWanted, err := strconv.ParseInt(c.GasWanted, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid gas wanted, %w", err)
+	}
+
+	// Create a new faucet with
+	// static gas estimation
+	f, err := faucet.NewFaucet(static.New(gasFee, gasWanted))
 	if err != nil {
 		return fmt.Errorf("unable to create faucet, %w", err)
 	}
 
 	// Create a new waiter
-	w := waiter.New()
+	w := newWaiter()
 
 	// Add the faucet service
-	w.Add(f.Serve)
+	w.add(f.Serve)
 
 	// Wait for the faucet to exit
-	return w.Wait()
+	return w.wait()
 }
 
 // readCORSConfig reads the CORS configuration
