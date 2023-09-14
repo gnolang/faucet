@@ -29,3 +29,9 @@ func WithMiddlewares(middlewares []Middleware) Option {
 		f.middlewares = middlewares
 	}
 }
+
+func WithHandlers(handlers []Handler) Option {
+	return func(f *Faucet) {
+		f.handlers = handlers
+	}
+}

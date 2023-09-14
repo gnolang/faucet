@@ -13,3 +13,8 @@ type Logger interface {
 }
 
 type Middleware func(next http.Handler) http.Handler
+
+type Handler struct {
+	Pattern     string
+	HandlerFunc http.HandlerFunc
+}

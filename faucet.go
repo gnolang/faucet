@@ -9,11 +9,11 @@ import (
 
 	"github.com/gnolang/faucet/config"
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
 )
 
-// Faucet is a standard Gno
-// native currency faucet
+// Faucet is a standard Gno faucet
 type Faucet struct {
 	estimator Estimator // gas pricing estimations
 	logger    Logger    // log feedback
@@ -22,15 +22,17 @@ type Faucet struct {
 
 	config      *config.Config // faucet configuration
 	middlewares []Middleware   // request middlewares
+	handlers    []Handler      // request handlers
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
-func NewFaucet(opts ...Option) *Faucet {
+func NewFaucet(opts ...Option) (*Faucet, error) {
 	f := &Faucet{
 		estimator:   nil, // TODO static estimator
 		logger:      nil, // TODO nil logger
-		config:      nil, // TODO default config
-		middlewares: nil, // TODO no middlewares
+		config:      config.DefaultConfig(),
+		middlewares: nil,
+		handlers:    nil, // TODO single default handler
 
 		mux: chi.NewMux(),
 	}
@@ -40,7 +42,33 @@ func NewFaucet(opts ...Option) *Faucet {
 		opt(f)
 	}
 
-	return f
+	// Validate the configuration
+	if err := config.ValidateConfig(f.config); err != nil {
+		return nil, fmt.Errorf("invalid configuration, %w", err)
+	}
+
+	// Set up the CORS middleware
+	if f.config.CORSConfig != nil {
+		corsMiddleware := cors.New(cors.Options{
+			AllowedOrigins: f.config.CORSConfig.AllowedOrigins,
+			AllowedMethods: f.config.CORSConfig.AllowedMethods,
+			AllowedHeaders: f.config.CORSConfig.AllowedHeaders,
+		})
+
+		f.mux.Use(corsMiddleware.Handler)
+	}
+
+	// Set up additional middlewares
+	for _, middleware := range f.middlewares {
+		f.mux.Use(middleware)
+	}
+
+	// Set up the request handlers
+	for _, handler := range f.handlers {
+		f.mux.HandleFunc(handler.Pattern, handler.HandlerFunc)
+	}
+
+	return f, nil
 }
 
 // Serve serves the Gno faucet [BLOCKING]
