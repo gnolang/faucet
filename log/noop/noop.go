@@ -1,4 +1,4 @@
-package nul
+package noop
 
 // Logger is the nil (noop) logger
 type Logger struct{}

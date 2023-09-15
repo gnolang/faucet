@@ -11,7 +11,7 @@ import (
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate"
 	"github.com/gnolang/faucet/log"
-	"github.com/gnolang/faucet/log/nul"
+	"github.com/gnolang/faucet/log/noop"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
@@ -41,7 +41,7 @@ func NewFaucet(
 	f := &Faucet{
 		estimator:   estimator,
 		client:      client,
-		logger:      nul.New(),
+		logger:      noop.New(),
 		config:      config.DefaultConfig(),
 		middlewares: nil, // no middlewares by default
 
