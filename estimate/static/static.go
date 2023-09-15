@@ -6,19 +6,19 @@ import (
 
 // Estimator is a static gas estimator (returns static values)
 type Estimator struct {
-	gasFee    std.Coins
+	gasFee    std.Coin
 	gasWanted int64
 }
 
 // New creates a new static gas estimator
-func New(gasFee std.Coins, gasWanted int64) *Estimator {
+func New(gasFee std.Coin, gasWanted int64) *Estimator {
 	return &Estimator{
 		gasFee:    gasFee,
 		gasWanted: gasWanted,
 	}
 }
 
-func (e Estimator) EstimateGasFee(_ std.Tx) std.Coins {
+func (e Estimator) EstimateGasFee() std.Coin {
 	return e.gasFee
 }
 

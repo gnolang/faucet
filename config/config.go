@@ -2,7 +2,10 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+
+	"github.com/gnolang/gno/tm2/pkg/crypto/bip39"
 )
 
 const (
@@ -12,6 +15,8 @@ const (
 	DefaultSendAmount    = "1000000ugnot"
 	DefaultGasFee        = "1000000ugnot"
 	DefaultGasWanted     = "100000"
+	DefaultMnemonic      = "source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast"
+	DefaultNumAccounts   = uint64(1)
 )
 
 var (
@@ -32,6 +37,13 @@ type Config struct {
 
 	// The chain ID associated with the remote Gno chain
 	ChainID string `toml:"chain_id"`
+
+	// The mnemonic for the faucet
+	Mnemonic string `toml:"mnemonic"`
+
+	// The number of faucet accounts,
+	// based on the mnemonic (account 0, index x)
+	NumAccounts uint64 `toml:"num_accounts"`
 
 	// The static send amount (native currency).
 	// Format should be: <AMOUNT>ugnot
@@ -58,6 +70,8 @@ func DefaultConfig() *Config {
 		SendAmount:    DefaultSendAmount,
 		GasFee:        DefaultGasFee,
 		GasWanted:     DefaultGasWanted,
+		Mnemonic:      DefaultMnemonic,
+		NumAccounts:   DefaultNumAccounts,
 		CORSConfig:    DefaultCORSConfig(),
 	}
 }
@@ -92,6 +106,16 @@ func ValidateConfig(config *Config) error {
 	// validate the gas wanted
 	if !numberRegex.Match([]byte(config.GasWanted)) {
 		return errors.New("invalid gas wanted")
+	}
+
+	// validate the mnemonic is bip39-compliant
+	if !bip39.IsMnemonicValid(config.Mnemonic) {
+		return fmt.Errorf("invalid mnemonic, %s", config.Mnemonic)
+	}
+
+	// validate at least one faucet account is set
+	if config.NumAccounts < 1 {
+		return errors.New("invalid number of faucet accounts")
 	}
 
 	return nil

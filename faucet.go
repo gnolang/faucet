@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gnolang/faucet/client"
+	tm2Client "github.com/gnolang/faucet/client/http"
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate"
 	"github.com/gnolang/faucet/log"
@@ -20,12 +22,15 @@ import (
 type Faucet struct {
 	estimator estimate.Estimator // gas pricing estimations
 	logger    log.Logger         // log feedback
+	client    client.Client      // TM2 client
 
 	mux *chi.Mux // HTTP routing
 
 	config      *config.Config // faucet configuration
 	middlewares []Middleware   // request middlewares
 	handlers    []Handler      // request handlers
+
+	keyring keyring // the faucet keyring
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
@@ -35,9 +40,16 @@ func NewFaucet(estimator estimate.Estimator, opts ...Option) (*Faucet, error) {
 		logger:      nul.New(),
 		config:      config.DefaultConfig(),
 		middlewares: nil, // no middlewares by default
-		handlers:    nil, // TODO single default handler
 
 		mux: chi.NewMux(),
+	}
+
+	// Set the single default HTTP handler
+	f.handlers = []Handler{
+		{
+			"/",
+			f.defaultHTTPHandler,
+		},
 	}
 
 	// Apply the options
@@ -45,10 +57,21 @@ func NewFaucet(estimator estimate.Estimator, opts ...Option) (*Faucet, error) {
 		opt(f)
 	}
 
+	// Set the faucet client
+	f.client = tm2Client.NewClient(f.config.Remote)
+
 	// Validate the configuration
 	if err := config.ValidateConfig(f.config); err != nil {
 		return nil, fmt.Errorf("invalid configuration, %w", err)
 	}
+
+	// Generate the keyring
+	keyring, err := newKeyring(f.config.Mnemonic, f.config.NumAccounts)
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate keyring, %w", err)
+	}
+
+	f.keyring = keyring
 
 	// Set up the CORS middleware
 	if f.config.CORSConfig != nil {

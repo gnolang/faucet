@@ -88,6 +88,20 @@ func registerFlags(cfg *faucetCfg, fs *flag.FlagSet) {
 	)
 
 	fs.StringVar(
+		&cfg.Mnemonic,
+		"mnemonic",
+		config.DefaultMnemonic,
+		"the mnemonic for faucet keys",
+	)
+
+	fs.Uint64Var(
+		&cfg.NumAccounts,
+		"num-accounts",
+		config.DefaultNumAccounts,
+		"the number of faucet accounts, based on the mnemonic",
+	)
+
+	fs.StringVar(
 		&cfg.SendAmount,
 		"send-amount",
 		config.DefaultSendAmount,
