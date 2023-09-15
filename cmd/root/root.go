@@ -2,12 +2,15 @@ package root
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/gnolang/faucet"
+	tm2Client "github.com/gnolang/faucet/client/http"
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate/static"
 	"github.com/gnolang/gno/tm2/pkg/std"
@@ -19,7 +22,12 @@ import (
 
 const (
 	configFlagName = "config"
+	defaultRemote  = "http://127.0.0.1:26657"
 	envPrefix      = "GNO_FAUCET"
+)
+
+var (
+	remoteRegex = regexp.MustCompile(`^https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)(?![^<]*(?:<\/\w+>|\/?>))$`)
 )
 
 // faucetCfg wraps the faucet
@@ -28,6 +36,7 @@ type faucetCfg struct {
 	config.Config
 
 	corsConfigPath string
+	remote         string
 }
 
 // New creates the root faucet command
@@ -74,9 +83,9 @@ func registerFlags(cfg *faucetCfg, fs *flag.FlagSet) {
 	)
 
 	fs.StringVar(
-		&cfg.Remote,
+		&cfg.remote,
 		"remote",
-		config.DefaultRemote,
+		defaultRemote,
 		"the JSON-RPC URL of the Gno chain",
 	)
 
@@ -146,7 +155,7 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 	// It is worth noting that this is temporary,
 	// and will be removed once gas estimation is enabled
 	// on Gno.land
-	gasFee, err := std.ParseCoins(c.GasFee)
+	gasFee, err := std.ParseCoin(c.GasFee)
 	if err != nil {
 		return fmt.Errorf("invalid gas fee, %w", err)
 	}
@@ -156,9 +165,18 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 		return fmt.Errorf("invalid gas wanted, %w", err)
 	}
 
+	// Validate the remote URL
+	// validate the remote address
+	if !remoteRegex.Match([]byte(c.remote)) {
+		return errors.New("invalid remote address")
+	}
+
 	// Create a new faucet with
 	// static gas estimation
-	f, err := faucet.NewFaucet(static.New(gasFee, gasWanted))
+	f, err := faucet.NewFaucet(
+		static.New(gasFee, gasWanted),
+		tm2Client.NewClient(defaultRemote),
+	)
 	if err != nil {
 		return fmt.Errorf("unable to create faucet, %w", err)
 	}

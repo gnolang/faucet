@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gnolang/faucet/client"
-	tm2Client "github.com/gnolang/faucet/client/http"
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate"
 	"github.com/gnolang/faucet/log"
@@ -34,9 +33,14 @@ type Faucet struct {
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
-func NewFaucet(estimator estimate.Estimator, opts ...Option) (*Faucet, error) {
+func NewFaucet(
+	estimator estimate.Estimator,
+	client client.Client,
+	opts ...Option,
+) (*Faucet, error) {
 	f := &Faucet{
 		estimator:   estimator,
+		client:      client,
 		logger:      nul.New(),
 		config:      config.DefaultConfig(),
 		middlewares: nil, // no middlewares by default
@@ -56,9 +60,6 @@ func NewFaucet(estimator estimate.Estimator, opts ...Option) (*Faucet, error) {
 	for _, opt := range opts {
 		opt(f)
 	}
-
-	// Set the faucet client
-	f.client = tm2Client.NewClient(f.config.Remote)
 
 	// Validate the configuration
 	if err := config.ValidateConfig(f.config); err != nil {

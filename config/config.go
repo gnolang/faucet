@@ -10,7 +10,6 @@ import (
 
 const (
 	DefaultListenAddress = "0.0.0.0:8545"
-	DefaultRemote        = "http://127.0.0.1:26657"
 	DefaultChainID       = "dev"
 	DefaultSendAmount    = "1000000ugnot"
 	DefaultGasFee        = "1000000ugnot"
@@ -21,7 +20,6 @@ const (
 
 var (
 	listenAddressRegex = regexp.MustCompile(`^\d{1,3}(\.\d{1,3}){3}:\d+$`)
-	remoteRegex        = regexp.MustCompile(`^https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)(?![^<]*(?:<\/\w+>|\/?>))$`)
 	amountRegex        = regexp.MustCompile(`^\d+ugnot$`)
 	numberRegex        = regexp.MustCompile(`^\d+$`)
 )
@@ -31,9 +29,6 @@ type Config struct {
 	// The address at which the faucet will be served.
 	// Format should be: <IP>:<PORT>
 	ListenAddress string `toml:"listen_address"`
-
-	// The JSON-RPC URL of the Gno chain
-	Remote string `toml:"remote"`
 
 	// The chain ID associated with the remote Gno chain
 	ChainID string `toml:"chain_id"`
@@ -65,7 +60,6 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		ListenAddress: DefaultListenAddress,
-		Remote:        DefaultRemote,
 		ChainID:       DefaultChainID,
 		SendAmount:    DefaultSendAmount,
 		GasFee:        DefaultGasFee,
@@ -81,11 +75,6 @@ func ValidateConfig(config *Config) error {
 	// validate the listen address
 	if !listenAddressRegex.Match([]byte(config.ListenAddress)) {
 		return errors.New("invalid listen address")
-	}
-
-	// validate the remote address
-	if !remoteRegex.Match([]byte(config.Remote)) {
-		return errors.New("invalid remote address")
 	}
 
 	// validate the chain ID
