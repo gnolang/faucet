@@ -1,6 +1,7 @@
 package faucet
 
 import (
+	coreTypes "github.com/gnolang/gno/tm2/pkg/bft/rpc/core/types"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
 )
@@ -130,4 +131,40 @@ func (m *mockEstimator) EstimateGasWanted(tx *std.Tx) int64 {
 	}
 
 	return 0
+}
+
+type (
+	getAccountDelegate            func(crypto.Address) (std.Account, error)
+	sendTransactionSyncDelegate   func(tx *std.Tx) (*coreTypes.ResultBroadcastTx, error)
+	sendTransactionCommitDelegate func(tx *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error)
+)
+
+type mockClient struct {
+	getAccountFn            getAccountDelegate
+	sendTransactionSyncFn   sendTransactionSyncDelegate
+	sendTransactionCommitFn sendTransactionCommitDelegate
+}
+
+func (m *mockClient) GetAccount(address crypto.Address) (std.Account, error) {
+	if m.getAccountFn != nil {
+		return m.getAccountFn(address)
+	}
+
+	return nil, nil
+}
+
+func (m *mockClient) SendTransactionSync(tx *std.Tx) (*coreTypes.ResultBroadcastTx, error) {
+	if m.sendTransactionSyncFn != nil {
+		return m.sendTransactionSyncFn(tx)
+	}
+
+	return nil, nil
+}
+
+func (m *mockClient) SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error) {
+	if m.sendTransactionCommitFn != nil {
+		return m.sendTransactionCommitFn(tx)
+	}
+
+	return nil, nil
 }
