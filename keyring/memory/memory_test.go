@@ -1,4 +1,4 @@
-package faucet
+package memory
 
 import (
 	"testing"
@@ -33,7 +33,7 @@ func TestKeyring_NewKeyring(t *testing.T) {
 	)
 
 	// Create the keyring
-	kr := newKeyring(mnemonic, numAccounts)
+	kr := New(mnemonic, numAccounts)
 
 	// Make sure the keyring is initialized correctly
 	assert.Len(t, kr.addresses, int(numAccounts))
@@ -49,10 +49,10 @@ func TestKeyring_GetAddresses(t *testing.T) {
 	)
 
 	// Create the keyring
-	kr := newKeyring(mnemonic, numAccounts)
+	kr := New(mnemonic, numAccounts)
 
 	// Fetch the addresses
-	addresses := kr.getAddresses()
+	addresses := kr.GetAddresses()
 
 	// Make sure the addresses are valid
 	assert.Len(t, addresses, int(numAccounts))
@@ -71,17 +71,17 @@ func TestKeyring_GetKey(t *testing.T) {
 	)
 
 	// Create the keyring
-	kr := newKeyring(mnemonic, numAccounts)
+	kr := New(mnemonic, numAccounts)
 
 	// Fetch the addresses
-	addresses := kr.getAddresses()
+	addresses := kr.GetAddresses()
 
 	// Make sure the addresses are valid
 	assert.Len(t, addresses, int(numAccounts))
 
 	// Fetch the key associated with an address
 	address := addresses[0]
-	key := kr.getKey(address)
+	key := kr.GetKey(address)
 
 	// Make sure the key matches the address
 	assert.Equal(t, address, key.PubKey().Address())

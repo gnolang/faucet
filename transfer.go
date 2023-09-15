@@ -7,6 +7,10 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/std"
 )
 
+var (
+	errNoFundedAccount = errors.New("no funded account found")
+)
+
 // transferFunds transfers funds to the given address
 func (f *Faucet) transferFunds(address crypto.Address) error {
 	// Find an account that has balance to cover the transfer
@@ -15,15 +19,12 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 		return err
 	}
 
-	sendAmount, _ := std.ParseCoins(f.config.SendAmount)
-
+	// Prepare the transaction
 	prepareCfg := prepareCfg{
 		fromAddress: fundAccount.GetAddress(),
 		toAddress:   address,
-		sendAmount:  sendAmount,
+		sendAmount:  f.sendAmount,
 	}
-
-	// Prepare the transaction
 	tx := prepareTransaction(f.estimator, prepareCfg)
 
 	// Sign the transaction
@@ -35,7 +36,7 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 
 	if err := signTransaction(
 		tx,
-		f.keyring.getKey(fundAccount.GetAddress()),
+		f.keyring.GetKey(fundAccount.GetAddress()),
 		signCfg,
 	); err != nil {
 		return err
@@ -48,7 +49,13 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 // findFundedAccount finds an account
 // whose balance is enough to cover the send amount
 func (f *Faucet) findFundedAccount() (std.Account, error) {
-	for _, address := range f.keyring.getAddresses() {
+	// A funded account is an account that can
+	// cover the initial transfer fee, as well
+	// as the send amount
+	estimatedFee := f.estimator.EstimateGasFee()
+	requiredFunds := f.sendAmount.Add(std.NewCoins(estimatedFee))
+
+	for _, address := range f.keyring.GetAddresses() {
 		// Fetch the account
 		account, err := f.client.GetAccount(address)
 		if err != nil {
@@ -67,7 +74,7 @@ func (f *Faucet) findFundedAccount() (std.Account, error) {
 		balance := account.GetCoins()
 
 		// Make sure there are enough funds
-		if balance.IsAllLT(f.sendAmount) {
+		if balance.IsAllLT(requiredFunds) {
 			f.logger.Error(
 				"account cannot serve requests",
 				"address",
@@ -75,7 +82,7 @@ func (f *Faucet) findFundedAccount() (std.Account, error) {
 				"balance",
 				balance.String(),
 				"amount",
-				f.sendAmount,
+				requiredFunds,
 			)
 
 			continue
@@ -84,5 +91,5 @@ func (f *Faucet) findFundedAccount() (std.Account, error) {
 		return account, nil
 	}
 
-	return nil, errors.New("no funded account found")
+	return nil, errNoFundedAccount
 }

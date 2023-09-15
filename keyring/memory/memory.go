@@ -1,4 +1,4 @@
-package faucet
+package memory
 
 import (
 	"github.com/gnolang/gno/tm2/pkg/crypto"
@@ -7,13 +7,14 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/crypto/secp256k1"
 )
 
-type keyring struct {
+// Keyring is an in-memory keyring
+type Keyring struct {
 	addresses []crypto.Address
 	keyMap    map[crypto.Address]crypto.PrivKey
 }
 
-// newKeyring initializes the keyring using the provided mnemonics
-func newKeyring(mnemonic string, numAccounts uint64) *keyring {
+// New initializes the keyring using the provided mnemonics
+func New(mnemonic string, numAccounts uint64) *Keyring {
 	addresses := make([]crypto.Address, numAccounts)
 	keyMap := make(map[crypto.Address]crypto.PrivKey, numAccounts)
 
@@ -28,19 +29,19 @@ func newKeyring(mnemonic string, numAccounts uint64) *keyring {
 		keyMap[address] = key
 	}
 
-	return &keyring{
+	return &Keyring{
 		addresses: addresses,
 		keyMap:    keyMap,
 	}
 }
 
-// getAddresses fetches the addresses in the keyring
-func (k *keyring) getAddresses() []crypto.Address {
+// GetAddresses fetches the addresses in the keyring
+func (k *Keyring) GetAddresses() []crypto.Address {
 	return k.addresses
 }
 
-// getKey fetches the private key associated with the specified address
-func (k *keyring) getKey(address crypto.Address) crypto.PrivKey {
+// GetKey fetches the private key associated with the specified address
+func (k *Keyring) GetKey(address crypto.Address) crypto.PrivKey {
 	return k.keyMap[address]
 }
 

@@ -168,3 +168,144 @@ func (m *mockClient) SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadca
 
 	return nil, nil
 }
+
+type (
+	getAddressDelegate       func() crypto.Address
+	setAddressDelegate       func(crypto.Address) error
+	getPubKeyDelegate        func() crypto.PubKey
+	setPubKeyDelegate        func(crypto.PubKey) error
+	getAccountNumberDelegate func() uint64
+	setAccountNumberDelegate func(uint64) error
+	getSequenceDelegate      func() uint64
+	setSequenceDelegate      func(uint64) error
+	getCoinsDelegate         func() std.Coins
+	setCoinsDelegate         func(std.Coins) error
+)
+
+type mockAccount struct {
+	getAddressFn       getAddressDelegate
+	setAddressFn       setAddressDelegate
+	getPubKeyFn        getPubKeyDelegate
+	setPubKeyFn        setPubKeyDelegate
+	getAccountNumberFn getAccountNumberDelegate
+	setAccountNumberFn setAccountNumberDelegate
+	getSequenceFn      getSequenceDelegate
+	setSequenceFn      setSequenceDelegate
+	getCoinsFn         getCoinsDelegate
+	setCoinsFn         setCoinsDelegate
+	stringFn           stringDelegate
+}
+
+func (m *mockAccount) GetAddress() crypto.Address {
+	if m.getAddressFn != nil {
+		return m.getAddressFn()
+	}
+
+	return crypto.Address{}
+}
+
+func (m *mockAccount) SetAddress(address crypto.Address) error {
+	if m.setAddressFn != nil {
+		return m.setAddressFn(address)
+	}
+
+	return nil
+}
+
+func (m *mockAccount) GetPubKey() crypto.PubKey {
+	if m.getPubKeyFn != nil {
+		return m.getPubKeyFn()
+	}
+
+	return nil
+}
+
+func (m *mockAccount) SetPubKey(key crypto.PubKey) error {
+	if m.setPubKeyFn != nil {
+		return m.setPubKeyFn(key)
+	}
+
+	return nil
+}
+
+func (m *mockAccount) GetAccountNumber() uint64 {
+	if m.getAccountNumberFn != nil {
+		return m.getAccountNumberFn()
+	}
+
+	return 0
+}
+
+func (m *mockAccount) SetAccountNumber(number uint64) error {
+	if m.setAccountNumberFn != nil {
+		return m.setAccountNumberFn(number)
+	}
+
+	return nil
+}
+
+func (m *mockAccount) GetSequence() uint64 {
+	if m.getSequenceFn != nil {
+		return m.getSequenceFn()
+	}
+
+	return 0
+}
+
+func (m *mockAccount) SetSequence(sequence uint64) error {
+	if m.setSequenceFn != nil {
+		return m.setSequenceFn(sequence)
+	}
+
+	return nil
+}
+
+func (m *mockAccount) GetCoins() std.Coins {
+	if m.getCoinsFn != nil {
+		return m.getCoinsFn()
+	}
+
+	return std.Coins{}
+}
+
+func (m *mockAccount) SetCoins(coins std.Coins) error {
+	if m.setCoinsFn != nil {
+		return m.setCoinsFn(coins)
+	}
+
+	return nil
+}
+
+func (m *mockAccount) String() string {
+	if m.stringFn != nil {
+		return m.stringFn()
+	}
+
+	return ""
+}
+
+type (
+	getAddressesDelegate func() []crypto.Address
+	getKeyDelegate       func(crypto.Address) crypto.PrivKey
+)
+
+type mockKeyring struct {
+	getAddressesFn getAddressesDelegate
+	getKeyFn       getKeyDelegate
+}
+
+func (m *mockKeyring) GetAddresses() []crypto.Address {
+	if m.getAddressesFn != nil {
+		return m.getAddressesFn()
+	}
+
+	return nil
+}
+
+func (m *mockKeyring) GetKey(address crypto.Address) crypto.PrivKey {
+	if m.getKeyFn != nil {
+		return m.getKeyFn(address)
+	}
+
+	return nil
+}

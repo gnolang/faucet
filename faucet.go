@@ -10,6 +10,8 @@ import (
 	"github.com/gnolang/faucet/client"
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate"
+	"github.com/gnolang/faucet/keyring"
+	"github.com/gnolang/faucet/keyring/memory"
 	"github.com/gnolang/faucet/log"
 	"github.com/gnolang/faucet/log/noop"
 	"github.com/gnolang/gno/tm2/pkg/std"
@@ -23,6 +25,7 @@ type Faucet struct {
 	estimator estimate.Estimator // gas pricing estimations
 	logger    log.Logger         // log feedback
 	client    client.Client      // TM2 client
+	keyring   keyring.Keyring    // the faucet keyring
 
 	mux *chi.Mux // HTTP routing
 
@@ -30,7 +33,6 @@ type Faucet struct {
 	middlewares []Middleware   // request middlewares
 	handlers    []Handler      // request handlers
 
-	keyring    *keyring  // the faucet keyring
 	sendAmount std.Coins // for fast lookup
 }
 
@@ -71,8 +73,8 @@ func NewFaucet(
 	// Set the send amount
 	f.sendAmount, _ = std.ParseCoins(f.config.SendAmount)
 
-	// Generate the keyring
-	f.keyring = newKeyring(f.config.Mnemonic, f.config.NumAccounts)
+	// Generate the in-memory keyring
+	f.keyring = memory.New(f.config.Mnemonic, f.config.NumAccounts)
 
 	// Set up the CORS middleware
 	if f.config.CORSConfig != nil {
