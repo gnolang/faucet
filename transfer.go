@@ -24,10 +24,7 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 	}
 
 	// Prepare the transaction
-	tx, err := prepareTransaction(f.estimator, prepareCfg)
-	if err != nil {
-		return err
-	}
+	tx := prepareTransaction(f.estimator, prepareCfg)
 
 	// Sign the transaction
 	signCfg := signCfg{

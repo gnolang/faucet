@@ -8,5 +8,5 @@ type Estimator interface {
 	EstimateGasFee() std.Coin
 
 	// EstimateGasWanted estimates the optimal gas wanted for the specified transaction
-	EstimateGasWanted(tx std.Tx) int64
+	EstimateGasWanted(tx *std.Tx) int64
 }

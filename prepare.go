@@ -18,7 +18,7 @@ type prepareCfg struct {
 func prepareTransaction(
 	estimator estimate.Estimator,
 	cfg prepareCfg,
-) (*std.Tx, error) {
+) *std.Tx {
 	// Construct the transaction
 	msg := bank.MsgSend{
 		FromAddress: cfg.fromAddress,
@@ -26,7 +26,7 @@ func prepareTransaction(
 		Amount:      cfg.sendAmount,
 	}
 
-	tx := std.Tx{
+	tx := &std.Tx{
 		Msgs:       []std.Msg{msg},
 		Signatures: nil,
 	}
@@ -37,5 +37,5 @@ func prepareTransaction(
 
 	tx.Fee = std.NewFee(gasWanted, gasFee)
 
-	return &tx, nil
+	return tx
 }

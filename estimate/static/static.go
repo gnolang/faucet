@@ -22,6 +22,6 @@ func (e Estimator) EstimateGasFee() std.Coin {
 	return e.gasFee
 }
 
-func (e Estimator) EstimateGasWanted(_ std.Tx) int64 {
+func (e Estimator) EstimateGasWanted(_ *std.Tx) int64 {
 	return e.gasWanted
 }

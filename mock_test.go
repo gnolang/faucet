@@ -1,6 +1,9 @@
 package faucet
 
-import "github.com/gnolang/gno/tm2/pkg/crypto"
+import (
+	"github.com/gnolang/gno/tm2/pkg/crypto"
+	"github.com/gnolang/gno/tm2/pkg/std"
+)
 
 type (
 	bytesDelegate         func() []byte
@@ -101,4 +104,30 @@ func (m *mockPubKey) String() string {
 	}
 
 	return ""
+}
+
+type (
+	estimateGasFeeDelegate    func() std.Coin
+	estimateGasWantedDelegate func(*std.Tx) int64
+)
+
+type mockEstimator struct {
+	estimateGasFeeFn    estimateGasFeeDelegate
+	estimateGasWantedFn estimateGasWantedDelegate
+}
+
+func (m *mockEstimator) EstimateGasFee() std.Coin {
+	if m.estimateGasFeeFn != nil {
+		return m.estimateGasFeeFn()
+	}
+
+	return std.Coin{}
+}
+
+func (m *mockEstimator) EstimateGasWanted(tx *std.Tx) int64 {
+	if m.estimateGasWantedFn != nil {
+		return m.estimateGasWantedFn(tx)
+	}
+
+	return 0
 }
