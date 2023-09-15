@@ -29,7 +29,7 @@ type Faucet struct {
 	middlewares []Middleware   // request middlewares
 	handlers    []Handler      // request handlers
 
-	keyring keyring // the faucet keyring
+	keyring *keyring // the faucet keyring
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
@@ -67,12 +67,7 @@ func NewFaucet(
 	}
 
 	// Generate the keyring
-	keyring, err := newKeyring(f.config.Mnemonic, f.config.NumAccounts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to generate keyring, %w", err)
-	}
-
-	f.keyring = keyring
+	f.keyring = newKeyring(f.config.Mnemonic, f.config.NumAccounts)
 
 	// Set up the CORS middleware
 	if f.config.CORSConfig != nil {
