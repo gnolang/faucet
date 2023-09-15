@@ -48,8 +48,6 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 // findFundedAccount finds an account
 // whose balance is enough to cover the send amount
 func (f *Faucet) findFundedAccount() (std.Account, error) {
-	sendAmount, _ := std.ParseCoins(f.config.SendAmount)
-
 	for _, address := range f.keyring.getAddresses() {
 		// Fetch the account
 		account, err := f.client.GetAccount(address)
@@ -69,7 +67,7 @@ func (f *Faucet) findFundedAccount() (std.Account, error) {
 		balance := account.GetCoins()
 
 		// Make sure there are enough funds
-		if balance.IsAllLT(sendAmount) {
+		if balance.IsAllLT(f.sendAmount) {
 			f.logger.Error(
 				"account cannot serve requests",
 				"address",
@@ -77,7 +75,7 @@ func (f *Faucet) findFundedAccount() (std.Account, error) {
 				"balance",
 				balance.String(),
 				"amount",
-				sendAmount,
+				f.sendAmount,
 			)
 
 			continue

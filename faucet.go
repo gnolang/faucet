@@ -12,6 +12,7 @@ import (
 	"github.com/gnolang/faucet/estimate"
 	"github.com/gnolang/faucet/log"
 	"github.com/gnolang/faucet/log/noop"
+	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
@@ -29,7 +30,8 @@ type Faucet struct {
 	middlewares []Middleware   // request middlewares
 	handlers    []Handler      // request handlers
 
-	keyring *keyring // the faucet keyring
+	keyring    *keyring  // the faucet keyring
+	sendAmount std.Coins // for fast lookup
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
@@ -66,6 +68,9 @@ func NewFaucet(
 		return nil, fmt.Errorf("invalid configuration, %w", err)
 	}
 
+	// Set the send amount
+	f.sendAmount, _ = std.ParseCoins(f.config.SendAmount)
+
 	// Generate the keyring
 	f.keyring = newKeyring(f.config.Mnemonic, f.config.NumAccounts)
 
@@ -87,7 +92,7 @@ func NewFaucet(
 
 	// Set up the request handlers
 	for _, handler := range f.handlers {
-		f.mux.HandleFunc(handler.Pattern, handler.HandlerFunc)
+		f.mux.Post(handler.Pattern, handler.HandlerFunc)
 	}
 
 	return f, nil

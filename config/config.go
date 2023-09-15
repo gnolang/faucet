@@ -19,6 +19,16 @@ const (
 )
 
 var (
+	ErrInvalidListenAddress = errors.New("invalid listen address")
+	ErrInvalidChainID       = errors.New("invalid chain ID")
+	ErrInvalidSendAmount    = errors.New("invalid send amount")
+	ErrInvalidGasFee        = errors.New("invalid gas fee")
+	ErrInvalidGasWanted     = errors.New("invalid gas wanted")
+	ErrInvalidMnemonic      = errors.New("invalid mnemonic")
+	ErrInvalidNumAccounts   = errors.New("invalid number of faucet accounts")
+)
+
+var (
 	listenAddressRegex = regexp.MustCompile(`^\d{1,3}(\.\d{1,3}){3}:\d+$`)
 	amountRegex        = regexp.MustCompile(`^\d+ugnot$`)
 	numberRegex        = regexp.MustCompile(`^\d+$`)
@@ -74,37 +84,37 @@ func DefaultConfig() *Config {
 func ValidateConfig(config *Config) error {
 	// validate the listen address
 	if !listenAddressRegex.Match([]byte(config.ListenAddress)) {
-		return errors.New("invalid listen address")
+		return ErrInvalidListenAddress
 	}
 
 	// validate the chain ID
 	if config.ChainID == "" {
-		return errors.New("invalid chain ID")
+		return ErrInvalidChainID
 	}
 
 	// validate the send amount
 	if !amountRegex.Match([]byte(config.SendAmount)) {
-		return errors.New("invalid send amount")
+		return ErrInvalidSendAmount
 	}
 
 	// validate the gas fee
 	if !amountRegex.Match([]byte(config.GasFee)) {
-		return errors.New("invalid gas fee")
+		return ErrInvalidGasFee
 	}
 
 	// validate the gas wanted
 	if !numberRegex.Match([]byte(config.GasWanted)) {
-		return errors.New("invalid gas wanted")
+		return ErrInvalidGasWanted
 	}
 
 	// validate the mnemonic is bip39-compliant
 	if !bip39.IsMnemonicValid(config.Mnemonic) {
-		return fmt.Errorf("invalid mnemonic, %s", config.Mnemonic)
+		return fmt.Errorf("%w, %s", ErrInvalidMnemonic, config.Mnemonic)
 	}
 
 	// validate at least one faucet account is set
 	if config.NumAccounts < 1 {
-		return errors.New("invalid number of faucet accounts")
+		return ErrInvalidNumAccounts
 	}
 
 	return nil

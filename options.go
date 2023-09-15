@@ -31,6 +31,6 @@ func WithMiddlewares(middlewares []Middleware) Option {
 // WithHandlers specifies the HTTP handlers for the faucet
 func WithHandlers(handlers []Handler) Option {
 	return func(f *Faucet) {
-		f.handlers = handlers
+		f.handlers = append(f.handlers, handlers...)
 	}
 }
