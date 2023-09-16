@@ -1,4 +1,4 @@
-package root
+package main
 
 import (
 	"context"
@@ -32,23 +32,25 @@ var remoteRegex = regexp.MustCompile(`^https?://[a-z\d.-]+(:\d+)?(?:/[a-z\d]+)*$
 // faucetCfg wraps the faucet
 // root command configuration
 type faucetCfg struct {
-	corsConfigPath string
-	remote         string
+	config *config.Config
 
-	config.Config
+	faucetConfigPath string
+	remote           string
 }
 
-// New creates the root faucet command
-func New() *ffcli.Command {
-	cfg := &faucetCfg{}
+// newRootCmd creates the root faucet command
+func newRootCmd() *ffcli.Command {
+	cfg := &faucetCfg{
+		config: config.DefaultConfig(),
+	}
 
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
-	registerFlags(cfg, fs)
+	cfg.registerRootFlags(fs)
 
 	return &ffcli.Command{
 		Name:       "serve",
 		ShortUsage: "serve [flags]",
-		LongHelp:   "Starts the Gno faucet service",
+		LongHelp:   "Serves the Gno faucet service",
 		FlagSet:    fs,
 		Exec:       cfg.exec,
 		Options: []ff.Option{
@@ -65,101 +67,101 @@ func New() *ffcli.Command {
 }
 
 // registerFlags registers the faucet root command flags
-func registerFlags(cfg *faucetCfg, fs *flag.FlagSet) {
+func (c *faucetCfg) registerRootFlags(fs *flag.FlagSet) {
 	// Config flag
 	fs.String(
 		configFlagName,
 		"",
-		"the path to the configuration file [TOML]",
+		"the path to the command configuration file [TOML]",
 	)
 
 	// Top level flags
 	fs.StringVar(
-		&cfg.ListenAddress,
+		&c.config.ListenAddress,
 		"listen-address",
 		config.DefaultListenAddress,
 		"the IP:PORT URL for the faucet server",
 	)
 
 	fs.StringVar(
-		&cfg.remote,
+		&c.remote,
 		"remote",
 		defaultRemote,
 		"the JSON-RPC URL of the Gno chain",
 	)
 
 	fs.StringVar(
-		&cfg.ChainID,
+		&c.config.ChainID,
+		"chain-id",
 		config.DefaultChainID,
-		"dev",
 		"the chain ID associated with the remote Gno chain",
 	)
 
 	fs.StringVar(
-		&cfg.Mnemonic,
+		&c.config.Mnemonic,
 		"mnemonic",
 		"",
 		"the mnemonic for faucet keys",
 	)
 
 	fs.Uint64Var(
-		&cfg.NumAccounts,
+		&c.config.NumAccounts,
 		"num-accounts",
 		config.DefaultNumAccounts,
 		"the number of faucet accounts, based on the mnemonic",
 	)
 
 	fs.StringVar(
-		&cfg.SendAmount,
+		&c.config.SendAmount,
 		"send-amount",
 		config.DefaultSendAmount,
 		"the static send amount (native currency)",
 	)
 
 	fs.StringVar(
-		&cfg.GasFee,
+		&c.config.GasFee,
 		"gas-fee",
 		config.DefaultGasFee,
 		"the static gas fee for the transaction",
 	)
 
 	fs.StringVar(
-		&cfg.GasWanted,
+		&c.config.GasWanted,
 		"gas-wanted",
 		config.DefaultGasWanted,
 		"the static gas wanted for the transaction",
 	)
 
 	fs.StringVar(
-		&cfg.corsConfigPath,
-		"cors-config",
+		&c.faucetConfigPath,
+		"faucet-config",
 		"",
-		"the path to the CORS TOML configuration, if any",
+		"the path to the faucet TOML configuration, if any",
 	)
 }
 
 // exec executes the faucet root command
-func (c *faucetCfg) exec(context.Context, []string) error {
-	// Read the CORS configuration, if any
-	if c.corsConfigPath != "" {
-		corsConfig, err := readCORSConfig(c.corsConfigPath)
+func (c *faucetCfg) exec(_ context.Context, _ []string) error {
+	// Read the faucet configuration, if any
+	if c.faucetConfigPath != "" {
+		faucetConfig, err := readFaucetConfig(c.faucetConfigPath)
 		if err != nil {
-			return fmt.Errorf("unable to read CORS config, %w", err)
+			return fmt.Errorf("unable to read faucet config, %w", err)
 		}
 
-		c.CORSConfig = corsConfig
+		c.config = faucetConfig
 	}
 
 	// Parse static gas values.
 	// It is worth noting that this is temporary,
 	// and will be removed once gas estimation is enabled
 	// on Gno.land
-	gasFee, err := std.ParseCoin(c.GasFee)
+	gasFee, err := std.ParseCoin(c.config.GasFee)
 	if err != nil {
 		return fmt.Errorf("invalid gas fee, %w", err)
 	}
 
-	gasWanted, err := strconv.ParseInt(c.GasWanted, 10, 64)
+	gasWanted, err := strconv.ParseInt(c.config.GasWanted, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid gas wanted, %w", err)
 	}
@@ -182,6 +184,7 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 		static.New(gasFee, gasWanted),
 		tm2Client.NewClient(defaultRemote),
 		faucet.WithLogger(newCommandLogger(logger)),
+		faucet.WithConfig(c.config),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to create faucet, %w", err)
@@ -197,9 +200,9 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 	return w.wait()
 }
 
-// readCORSConfig reads the CORS configuration
+// readFaucetConfig reads the faucet configuration
 // from the specified path
-func readCORSConfig(path string) (*config.CORS, error) {
+func readFaucetConfig(path string) (*config.Config, error) {
 	// Read the config file
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -207,11 +210,11 @@ func readCORSConfig(path string) (*config.CORS, error) {
 	}
 
 	// Parse it
-	var corsConfig config.CORS
+	var faucetConfig config.Config
 
-	if err := toml.Unmarshal(content, &corsConfig); err != nil {
+	if err := toml.Unmarshal(content, &faucetConfig); err != nil {
 		return nil, err
 	}
 
-	return &corsConfig, nil
+	return &faucetConfig, nil
 }

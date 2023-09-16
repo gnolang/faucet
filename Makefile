@@ -3,7 +3,7 @@ all: build
 .PHONY: build
 build:
 	@echo "Building faucet binary"
-	go build -o build/faucet ./cmd/faucet
+	go build -o build/faucet ./cmd
 
 .PHONY: lint
 lint:

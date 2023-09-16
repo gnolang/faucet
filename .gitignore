@@ -10,3 +10,6 @@
 
 # Build Leftovers
 build/*
+
+# Configuration files
+*.toml
