@@ -83,7 +83,7 @@ func (m *mockPubKey) Bytes() []byte {
 	return nil
 }
 
-func (m *mockPubKey) VerifyBytes(msg []byte, sig []byte) bool {
+func (m *mockPubKey) VerifyBytes(msg, sig []byte) bool {
 	if m.verifyFn != nil {
 		return m.verifyFn(msg, sig)
 	}

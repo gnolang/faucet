@@ -1,6 +1,6 @@
 module github.com/gnolang/faucet
 
-go 1.21
+go 1.20
 
 require (
 	github.com/gnolang/gno v0.0.0-20230914214026-ef6a55bf9db2

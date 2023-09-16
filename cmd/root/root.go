@@ -26,17 +26,15 @@ const (
 	envPrefix      = "GNO_FAUCET"
 )
 
-var (
-	remoteRegex = regexp.MustCompile(`^https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)(?![^<]*(?:<\/\w+>|\/?>))$`)
-)
+var remoteRegex = regexp.MustCompile(`^https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)(?![^<]*(?:<\/\w+>|\/?>))$`)
 
 // faucetCfg wraps the faucet
 // root command configuration
 type faucetCfg struct {
-	config.Config
-
 	corsConfigPath string
 	remote         string
+
+	config.Config
 }
 
 // New creates the root faucet command
@@ -167,7 +165,7 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 
 	// Validate the remote URL
 	// validate the remote address
-	if !remoteRegex.Match([]byte(c.remote)) {
+	if !remoteRegex.MatchString(c.remote) {
 		return errors.New("invalid remote address")
 	}
 
@@ -202,8 +200,8 @@ func readCORSConfig(path string) (*config.CORS, error) {
 
 	// Parse it
 	var corsConfig config.CORS
-	err = toml.Unmarshal(content, &corsConfig)
-	if err != nil {
+
+	if err := toml.Unmarshal(content, &corsConfig); err != nil {
 		return nil, err
 	}
 

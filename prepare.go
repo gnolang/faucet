@@ -9,9 +9,9 @@ import (
 
 // prepareCfg specifies the tx prepare configuration
 type prepareCfg struct {
+	sendAmount  std.Coins      // the amount to be sent
 	fromAddress crypto.Address // the faucet address
 	toAddress   crypto.Address // the beneficiary address
-	sendAmount  std.Coins      // the amount to be sent
 }
 
 // prepareTransaction prepares the transaction for signing

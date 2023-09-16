@@ -9,8 +9,8 @@ import (
 
 // Keyring is an in-memory keyring
 type Keyring struct {
-	addresses []crypto.Address
 	keyMap    map[crypto.Address]crypto.PrivKey
+	addresses []crypto.Address
 }
 
 // New initializes the keyring using the provided mnemonics
@@ -21,8 +21,8 @@ func New(mnemonic string, numAccounts uint64) *Keyring {
 	// Generate the seed
 	seed := bip39.NewSeed(mnemonic, "")
 
-	for i := uint32(0); i < uint32(numAccounts); i++ {
-		key := generateKeyFromSeed(seed, i)
+	for i := uint64(0); i < numAccounts; i++ {
+		key := generateKeyFromSeed(seed, uint32(i))
 		address := key.PubKey().Address()
 
 		addresses[i] = address
@@ -52,7 +52,7 @@ func generateKeyFromSeed(seed []byte, index uint32) crypto.PrivKey {
 
 	masterPriv, ch := hd.ComputeMastersFromSeed(seed)
 
-	// This derivation can never error out, since the path params
+	//nolint:errcheck // This derivation can never error out, since the path params
 	// are always going to be valid
 	derivedPriv, _ := hd.DerivePrivateKeyForPath(masterPriv, ch, pathParams.String())
 

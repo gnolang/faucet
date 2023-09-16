@@ -17,9 +17,7 @@ const (
 	faucetSuccess         = "successfully executed faucet transfer"
 )
 
-var (
-	errInvalidBeneficiary = errors.New("invalid beneficiary address")
-)
+var errInvalidBeneficiary = errors.New("invalid beneficiary address")
 
 // defaultHTTPHandler is the default faucet transfer handler
 func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {

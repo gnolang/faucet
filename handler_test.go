@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// decodeResponse decodes the JSON response
 func decodeResponse[T Response | Responses](t *testing.T, responseBody []byte) *T {
 	t.Helper()
 
@@ -52,15 +53,16 @@ func getFreePort(t *testing.T) int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-func waitForServer(t *testing.T, URL string, timeout time.Duration) {
+// waitForServer waits for the web server to start up
+func waitForServer(t *testing.T, url string) {
 	t.Helper()
 
 	ch := make(chan bool)
+
 	go func() {
 		for {
-			if _, err := http.Get(URL); err == nil {
+			if _, err := http.Get(url); err == nil {
 				ch <- true
-
 			}
 
 			time.Sleep(10 * time.Millisecond)
@@ -70,7 +72,7 @@ func waitForServer(t *testing.T, URL string, timeout time.Duration) {
 	select {
 	case <-ch:
 		return
-	case <-time.After(timeout):
+	case <-time.After(5 * time.Second):
 		t.Fatalf("server wait timeout exceeded")
 	}
 }
@@ -111,25 +113,23 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 	}
 
 	testTable := []struct {
-		name              string
-		expectedNumTxs    int
 		requestValidateFn func(response []byte)
+		name              string
 		request           []byte
+		expectedNumTxs    int
 	}{
 		{
-			"single request",
-			1,
 			func(resp []byte) {
 				response := decodeResponse[Response](t, resp)
 
 				assert.Empty(t, response.Error)
 				assert.Equal(t, faucetSuccess, response.Result)
 			},
+			"single request",
 			encodedSingleValidRequest,
+			1,
 		},
 		{
-			"bulk request",
-			len(bulkValidRequests),
 			func(resp []byte) {
 				responses := decodeResponse[Responses](t, resp)
 				require.Len(t, *responses, len(bulkValidRequests))
@@ -139,7 +139,9 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 					assert.Equal(t, faucetSuccess, response.Result)
 				}
 			},
+			"bulk request",
 			encodedBulkValidRequests,
+			len(bulkValidRequests),
 		},
 	}
 
@@ -249,7 +251,7 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 			url := getFaucetURL(f.config.ListenAddress)
 
 			// Wait for the faucet to be started
-			waitForServer(t, url, time.Second*5)
+			waitForServer(t, url)
 
 			// Execute the request
 			respRaw, err := http.Post(
@@ -326,25 +328,23 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 	}
 
 	testTable := []struct {
-		name              string
-		expectedNumTxs    int
 		requestValidateFn func(response []byte)
+		name              string
 		request           []byte
+		expectedNumTxs    int
 	}{
 		{
-			"single request",
-			1,
 			func(resp []byte) {
 				response := decodeResponse[Response](t, resp)
 
 				assert.Contains(t, response.Error, errInvalidBeneficiary.Error())
 				assert.Equal(t, response.Result, unableToHandleRequest)
 			},
+			"single request",
 			encodedSingleInvalidRequest,
+			1,
 		},
 		{
-			"bulk request",
-			len(bulkInvalidRequests),
 			func(resp []byte) {
 				responses := decodeResponse[Responses](t, resp)
 				require.Len(t, *responses, len(bulkInvalidRequests))
@@ -354,7 +354,9 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 					assert.Equal(t, response.Result, unableToHandleRequest)
 				}
 			},
+			"bulk request",
 			encodedBulkInvalidRequests,
+			len(bulkInvalidRequests),
 		},
 	}
 
@@ -464,7 +466,7 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 			url := getFaucetURL(f.config.ListenAddress)
 
 			// Wait for the faucet to be started
-			waitForServer(t, url, time.Second*5)
+			waitForServer(t, url)
 
 			// Execute the request
 			respRaw, err := http.Post(
@@ -542,7 +544,7 @@ func TestFaucet_Serve_MalformedRequests(t *testing.T) {
 			url := getFaucetURL(f.config.ListenAddress)
 
 			// Wait for the faucet to be started
-			waitForServer(t, url, time.Second*5)
+			waitForServer(t, url)
 
 			// Execute the request
 			respRaw, err := http.Post(
@@ -686,7 +688,7 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 	url := getFaucetURL(f.config.ListenAddress)
 
 	// Wait for the faucet to be started
-	waitForServer(t, url, time.Second*5)
+	waitForServer(t, url)
 
 	// Execute the request
 	respRaw, err := http.Post(

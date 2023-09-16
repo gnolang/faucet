@@ -7,9 +7,7 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/std"
 )
 
-var (
-	errNoFundedAccount = errors.New("no funded account found")
-)
+var errNoFundedAccount = errors.New("no funded account found")
 
 // transferFunds transfers funds to the given address
 func (f *Faucet) transferFunds(address crypto.Address) error {
@@ -20,15 +18,15 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 	}
 
 	// Prepare the transaction
-	prepareCfg := prepareCfg{
+	pCfg := prepareCfg{
 		fromAddress: fundAccount.GetAddress(),
 		toAddress:   address,
 		sendAmount:  f.sendAmount,
 	}
-	tx := prepareTransaction(f.estimator, prepareCfg)
+	tx := prepareTransaction(f.estimator, pCfg)
 
 	// Sign the transaction
-	signCfg := signCfg{
+	sCfg := signCfg{
 		chainID:       f.config.ChainID,
 		accountNumber: fundAccount.GetAccountNumber(),
 		sequence:      fundAccount.GetSequence(),
@@ -37,7 +35,7 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 	if err := signTransaction(
 		tx,
 		f.keyring.GetKey(fundAccount.GetAddress()),
-		signCfg,
+		sCfg,
 	); err != nil {
 		return err
 	}

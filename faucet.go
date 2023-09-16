@@ -55,8 +55,8 @@ func NewFaucet(
 	// Set the single default HTTP handler
 	f.handlers = []Handler{
 		{
-			"/",
 			f.defaultHTTPHandler,
+			"/",
 		},
 	}
 
@@ -71,6 +71,7 @@ func NewFaucet(
 	}
 
 	// Set the send amount
+	//nolint:errcheck // SendAmount is validated beforehand
 	f.sendAmount, _ = std.ParseCoins(f.config.SendAmount)
 
 	// Generate the in-memory keyring

@@ -9,6 +9,8 @@ import (
 
 // generateTestMnemonic generates a new test BIP39 mnemonic using the provided entropy size
 func generateTestMnemonic(t *testing.T) string {
+	t.Helper()
+
 	// Generate the entropy seed
 	entropySeed, err := bip39.NewEntropy(256)
 	if err != nil {
@@ -16,7 +18,7 @@ func generateTestMnemonic(t *testing.T) string {
 	}
 
 	// Generate the actual mnemonic
-	mnemonic, err := bip39.NewMnemonic(entropySeed[:])
+	mnemonic, err := bip39.NewMnemonic(entropySeed)
 	if err != nil {
 		t.Fatal(err)
 	}

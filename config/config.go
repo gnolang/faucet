@@ -14,8 +14,9 @@ const (
 	DefaultSendAmount    = "1000000ugnot"
 	DefaultGasFee        = "1000000ugnot"
 	DefaultGasWanted     = "100000"
-	DefaultMnemonic      = "source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast"
-	DefaultNumAccounts   = uint64(1)
+	//nolint:lll // Mnemonic is naturally long
+	DefaultMnemonic    = "source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast"
+	DefaultNumAccounts = uint64(1)
 )
 
 var (
@@ -36,6 +37,9 @@ var (
 
 // Config defines the base-level Faucet configuration
 type Config struct {
+	// The associated CORS config, if any
+	CORSConfig *CORS `toml:"cors_config"`
+
 	// The address at which the faucet will be served.
 	// Format should be: <IP>:<PORT>
 	ListenAddress string `toml:"listen_address"`
@@ -45,10 +49,6 @@ type Config struct {
 
 	// The mnemonic for the faucet
 	Mnemonic string `toml:"mnemonic"`
-
-	// The number of faucet accounts,
-	// based on the mnemonic (account 0, index x)
-	NumAccounts uint64 `toml:"num_accounts"`
 
 	// The static send amount (native currency).
 	// Format should be: <AMOUNT>ugnot
@@ -62,8 +62,9 @@ type Config struct {
 	// Format should be: <AMOUNT>
 	GasWanted string `toml:"gas_wanted"`
 
-	// The associated CORS config, if any
-	CORSConfig *CORS `toml:"cors_config"`
+	// The number of faucet accounts,
+	// based on the mnemonic (account 0, index x)
+	NumAccounts uint64 `toml:"num_accounts"`
 }
 
 // DefaultConfig returns the default faucet configuration
@@ -83,7 +84,7 @@ func DefaultConfig() *Config {
 // ValidateConfig validates the faucet configuration
 func ValidateConfig(config *Config) error {
 	// validate the listen address
-	if !listenAddressRegex.Match([]byte(config.ListenAddress)) {
+	if !listenAddressRegex.MatchString(config.ListenAddress) {
 		return ErrInvalidListenAddress
 	}
 
@@ -93,17 +94,17 @@ func ValidateConfig(config *Config) error {
 	}
 
 	// validate the send amount
-	if !amountRegex.Match([]byte(config.SendAmount)) {
+	if !amountRegex.MatchString(config.SendAmount) {
 		return ErrInvalidSendAmount
 	}
 
 	// validate the gas fee
-	if !amountRegex.Match([]byte(config.GasFee)) {
+	if !amountRegex.MatchString(config.GasFee) {
 		return ErrInvalidGasFee
 	}
 
 	// validate the gas wanted
-	if !numberRegex.Match([]byte(config.GasWanted)) {
+	if !numberRegex.MatchString(config.GasWanted) {
 		return ErrInvalidGasWanted
 	}
 
