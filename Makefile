@@ -1,3 +1,10 @@
+all: build
+
+.PHONY: build
+build:
+	@echo "Building faucet binary"
+	go build -o build/faucet ./cmd/faucet
+
 .PHONY: lint
 lint:
 	golangci-lint run --config .github/golangci.yaml

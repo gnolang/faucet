@@ -18,6 +18,7 @@ import (
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/peterbourgon/ff/v3/fftoml"
+	"go.uber.org/zap"
 )
 
 const (
@@ -26,7 +27,7 @@ const (
 	envPrefix      = "GNO_FAUCET"
 )
 
-var remoteRegex = regexp.MustCompile(`^https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)(?![^<]*(?:<\/\w+>|\/?>))$`)
+var remoteRegex = regexp.MustCompile(`^https?://[a-z\d.-]+(:\d+)?(?:/[a-z\d]+)*$`)
 
 // faucetCfg wraps the faucet
 // root command configuration
@@ -97,7 +98,7 @@ func registerFlags(cfg *faucetCfg, fs *flag.FlagSet) {
 	fs.StringVar(
 		&cfg.Mnemonic,
 		"mnemonic",
-		config.DefaultMnemonic,
+		"",
 		"the mnemonic for faucet keys",
 	)
 
@@ -169,11 +170,15 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 		return errors.New("invalid remote address")
 	}
 
+	// Create a new logger
+	logger, _ := zap.NewDevelopment()
+
 	// Create a new faucet with
 	// static gas estimation
 	f, err := faucet.NewFaucet(
 		static.New(gasFee, gasWanted),
 		tm2Client.NewClient(defaultRemote),
+		faucet.WithLogger(newCommandLogger(logger)),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to create faucet, %w", err)

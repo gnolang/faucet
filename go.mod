@@ -9,6 +9,7 @@ require (
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.10.0
 	github.com/stretchr/testify v1.8.4
+	go.uber.org/zap v1.26.0
 	golang.org/x/sync v0.3.0
 )
 
@@ -39,6 +40,7 @@ require (
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opencensus.io v0.22.5 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
