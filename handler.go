@@ -12,16 +12,21 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 )
 
+const (
+	unableToHandleRequest = "unable to handle faucet request"
+	faucetSuccess         = "successfully executed faucet transfer"
+)
+
+var (
+	errInvalidBeneficiary = errors.New("invalid beneficiary address")
+)
+
 // defaultHTTPHandler is the default faucet transfer handler
 func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
 	// Load the requests
 	requestBody, readErr := io.ReadAll(r.Body)
 	if readErr != nil {
-		http.Error(
-			w,
-			"unable to read request",
-			http.StatusBadRequest,
-		)
+		http.Error(w, "unable to read request", http.StatusBadRequest)
 
 		return
 	}
@@ -64,7 +69,7 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 		if err != nil {
 			// Save the error response
 			responses[i] = Response{
-				Result: "unable to handle faucet request",
+				Result: unableToHandleRequest,
 				Error:  err.Error(),
 			}
 
@@ -74,7 +79,7 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 		// Run the method methodHandler
 		if err := f.transferFunds(beneficiary); err != nil {
 			f.logger.Debug(
-				"unable to handle faucet request",
+				unableToHandleRequest,
 				"request",
 				baseRequest,
 				"error",
@@ -82,7 +87,7 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 			)
 
 			responses[i] = Response{
-				Result: "unable to handle faucet request",
+				Result: unableToHandleRequest,
 				Error:  err.Error(),
 			}
 
@@ -90,7 +95,7 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 		}
 
 		responses[i] = Response{
-			Result: "successfully executed faucet transfer",
+			Result: faucetSuccess,
 		}
 	}
 
@@ -130,13 +135,13 @@ func extractRequests(requestBody []byte) (Requests, error) {
 func extractBeneficiary(request Request) (crypto.Address, error) {
 	// Validate the beneficiary address is set
 	if request.To == "" {
-		return crypto.Address{}, errors.New("invalid beneficiary address")
+		return crypto.Address{}, errInvalidBeneficiary
 	}
 
 	// Validate the beneficiary address is valid
 	beneficiary, err := crypto.AddressFromBech32(request.To)
 	if err != nil {
-		return crypto.Address{}, fmt.Errorf("invalid beneficiary address, %w", err)
+		return crypto.Address{}, fmt.Errorf("%w, %w", errInvalidBeneficiary, err)
 	}
 
 	return beneficiary, nil
