@@ -26,7 +26,7 @@ const (
 	envPrefix      = "GNO_FAUCET"
 )
 
-var (
+const (
 	defaultGasFee    = "1000000ugnot"
 	defaultGasWanted = "100000"
 	defaultRemote    = "http://127.0.0.1:26657"

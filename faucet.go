@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -112,15 +113,21 @@ func (f *Faucet) Serve(ctx context.Context) error {
 	group, gCtx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
+		defer f.logger.Info("faucet shut down")
+
+		ln, err := net.Listen("tcp", faucet.Addr)
+		if err != nil {
+			return err
+		}
+
 		f.logger.Info(
 			fmt.Sprintf(
 				"faucet started at %s",
-				f.config.ListenAddress,
+				ln.Addr().String(),
 			),
 		)
-		defer f.logger.Info("faucet shut down")
 
-		if err := faucet.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := faucet.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return err
 		}
 
