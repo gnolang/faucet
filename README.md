@@ -1,3 +1,5 @@
+<h2 align="center">⚛️ Tendermint2 Faucet ⚛️</h2>
+
 ## Overview
 
 `faucet` is a versatile command-line interface (CLI) tool and library designed to effortlessly deploy a faucet server
