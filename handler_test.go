@@ -81,7 +81,7 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 	t.Parallel()
 
 	var (
-		gasFee     = std.MustParseCoin(config.DefaultGasFee)
+		gasFee     = std.MustParseCoin("1ugnot")
 		sendAmount = std.MustParseCoins(config.DefaultSendAmount)
 	)
 
@@ -294,7 +294,7 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 	t.Parallel()
 
 	var (
-		gasFee     = std.MustParseCoin(config.DefaultGasFee)
+		gasFee     = std.MustParseCoin("1ugnot")
 		sendAmount = std.MustParseCoins(config.DefaultSendAmount)
 	)
 
@@ -523,7 +523,7 @@ func TestFaucet_Serve_MalformedRequests(t *testing.T) {
 			cfg.ListenAddress = fmt.Sprintf("127.0.0.1:%d", getFreePort(t))
 
 			f, err := NewFaucet(
-				static.New(std.MustParseCoin(config.DefaultGasFee), 100000),
+				static.New(std.MustParseCoin("1ugnot"), 100000),
 				&mockClient{},
 				WithConfig(cfg),
 			)
@@ -568,7 +568,7 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 	t.Parallel()
 
 	var (
-		gasFee     = std.MustParseCoin(config.DefaultGasFee)
+		gasFee     = std.MustParseCoin("1ugnot")
 		sendAmount = std.MustParseCoins(config.DefaultSendAmount)
 	)
 

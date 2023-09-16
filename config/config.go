@@ -12,8 +12,6 @@ const (
 	DefaultListenAddress = "0.0.0.0:8545"
 	DefaultChainID       = "dev"
 	DefaultSendAmount    = "1000000ugnot"
-	DefaultGasFee        = "1000000ugnot"
-	DefaultGasWanted     = "100000"
 	//nolint:lll // Mnemonic is naturally long
 	DefaultMnemonic    = "source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast"
 	DefaultNumAccounts = uint64(1)
@@ -23,8 +21,6 @@ var (
 	ErrInvalidListenAddress = errors.New("invalid listen address")
 	ErrInvalidChainID       = errors.New("invalid chain ID")
 	ErrInvalidSendAmount    = errors.New("invalid send amount")
-	ErrInvalidGasFee        = errors.New("invalid gas fee")
-	ErrInvalidGasWanted     = errors.New("invalid gas wanted")
 	ErrInvalidMnemonic      = errors.New("invalid mnemonic")
 	ErrInvalidNumAccounts   = errors.New("invalid number of faucet accounts")
 )
@@ -32,7 +28,6 @@ var (
 var (
 	listenAddressRegex = regexp.MustCompile(`^\d{1,3}(\.\d{1,3}){3}:\d+$`)
 	amountRegex        = regexp.MustCompile(`^\d+ugnot$`)
-	numberRegex        = regexp.MustCompile(`^\d+$`)
 )
 
 // Config defines the base-level Faucet configuration
@@ -54,14 +49,6 @@ type Config struct {
 	// Format should be: <AMOUNT>ugnot
 	SendAmount string `toml:"send_amount"`
 
-	// The static gas fee for the transaction.
-	// Format should be: <AMOUNT>ugnot
-	GasFee string `toml:"gas_fee"`
-
-	// The static gas wanted for the transaction.
-	// Format should be: <AMOUNT>
-	GasWanted string `toml:"gas_wanted"`
-
 	// The number of faucet accounts,
 	// based on the mnemonic (account 0, index x)
 	NumAccounts uint64 `toml:"num_accounts"`
@@ -73,8 +60,6 @@ func DefaultConfig() *Config {
 		ListenAddress: DefaultListenAddress,
 		ChainID:       DefaultChainID,
 		SendAmount:    DefaultSendAmount,
-		GasFee:        DefaultGasFee,
-		GasWanted:     DefaultGasWanted,
 		Mnemonic:      DefaultMnemonic,
 		NumAccounts:   DefaultNumAccounts,
 		CORSConfig:    DefaultCORSConfig(),
@@ -96,16 +81,6 @@ func ValidateConfig(config *Config) error {
 	// validate the send amount
 	if !amountRegex.MatchString(config.SendAmount) {
 		return ErrInvalidSendAmount
-	}
-
-	// validate the gas fee
-	if !amountRegex.MatchString(config.GasFee) {
-		return ErrInvalidGasFee
-	}
-
-	// validate the gas wanted
-	if !numberRegex.MatchString(config.GasWanted) {
-		return ErrInvalidGasWanted
 	}
 
 	// validate the mnemonic is bip39-compliant

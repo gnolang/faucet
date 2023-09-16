@@ -23,8 +23,13 @@ import (
 
 const (
 	configFlagName = "config"
-	defaultRemote  = "http://127.0.0.1:26657"
 	envPrefix      = "GNO_FAUCET"
+)
+
+var (
+	defaultGasFee    = "1000000ugnot"
+	defaultGasWanted = "100000"
+	defaultRemote    = "http://127.0.0.1:26657"
 )
 
 var remoteRegex = regexp.MustCompile(`^https?://[a-z\d.-]+(:\d+)?(?:/[a-z\d]+)*$`)
@@ -36,6 +41,8 @@ type faucetCfg struct {
 
 	faucetConfigPath string
 	remote           string
+	gasFee           string
+	gasWanted        string
 }
 
 // newRootCmd creates the root faucet command
@@ -84,13 +91,6 @@ func (c *faucetCfg) registerRootFlags(fs *flag.FlagSet) {
 	)
 
 	fs.StringVar(
-		&c.remote,
-		"remote",
-		defaultRemote,
-		"the JSON-RPC URL of the Gno chain",
-	)
-
-	fs.StringVar(
 		&c.config.ChainID,
 		"chain-id",
 		config.DefaultChainID,
@@ -119,17 +119,17 @@ func (c *faucetCfg) registerRootFlags(fs *flag.FlagSet) {
 	)
 
 	fs.StringVar(
-		&c.config.GasFee,
+		&c.gasFee,
 		"gas-fee",
-		config.DefaultGasFee,
-		"the static gas fee for the transaction",
+		defaultGasFee,
+		"the static gas fee for the transaction. Format: <AMOUNT>ugnot",
 	)
 
 	fs.StringVar(
-		&c.config.GasWanted,
+		&c.gasWanted,
 		"gas-wanted",
-		config.DefaultGasWanted,
-		"the static gas wanted for the transaction",
+		defaultGasWanted,
+		"the static gas wanted for the transaction. Format: <AMOUNT>ugnot",
 	)
 
 	fs.StringVar(
@@ -137,6 +137,13 @@ func (c *faucetCfg) registerRootFlags(fs *flag.FlagSet) {
 		"faucet-config",
 		"",
 		"the path to the faucet TOML configuration, if any",
+	)
+
+	fs.StringVar(
+		&c.remote,
+		"remote",
+		defaultRemote,
+		"the JSON-RPC URL of the Gno chain",
 	)
 }
 
@@ -156,18 +163,17 @@ func (c *faucetCfg) exec(_ context.Context, _ []string) error {
 	// It is worth noting that this is temporary,
 	// and will be removed once gas estimation is enabled
 	// on Gno.land
-	gasFee, err := std.ParseCoin(c.config.GasFee)
+	gasFee, err := std.ParseCoin(c.gasFee)
 	if err != nil {
 		return fmt.Errorf("invalid gas fee, %w", err)
 	}
 
-	gasWanted, err := strconv.ParseInt(c.config.GasWanted, 10, 64)
+	gasWanted, err := strconv.ParseInt(c.gasWanted, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid gas wanted, %w", err)
 	}
 
-	// Validate the remote URL
-	// validate the remote address
+	// Validate the remote address
 	if !remoteRegex.MatchString(c.remote) {
 		return errors.New("invalid remote address")
 	}
@@ -182,7 +188,7 @@ func (c *faucetCfg) exec(_ context.Context, _ []string) error {
 	// static gas estimation
 	f, err := faucet.NewFaucet(
 		static.New(gasFee, gasWanted),
-		tm2Client.NewClient(defaultRemote),
+		tm2Client.NewClient(c.remote),
 		faucet.WithLogger(newCommandLogger(logger)),
 		faucet.WithConfig(c.config),
 	)

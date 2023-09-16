@@ -36,24 +36,6 @@ func TestConfig_ValidateConfig(t *testing.T) {
 		assert.ErrorIs(t, ValidateConfig(cfg), ErrInvalidSendAmount)
 	})
 
-	t.Run("invalid gas fee", func(t *testing.T) {
-		t.Parallel()
-
-		cfg := DefaultConfig()
-		cfg.GasFee = "1000goo" // invalid denom
-
-		assert.ErrorIs(t, ValidateConfig(cfg), ErrInvalidGasFee)
-	})
-
-	t.Run("invalid gas wanted", func(t *testing.T) {
-		t.Parallel()
-
-		cfg := DefaultConfig()
-		cfg.GasWanted = "totally a number" // invalid number
-
-		assert.ErrorIs(t, ValidateConfig(cfg), ErrInvalidGasWanted)
-	})
-
 	t.Run("invalid mnemonic", func(t *testing.T) {
 		t.Parallel()
 
