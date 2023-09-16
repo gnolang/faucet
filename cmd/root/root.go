@@ -171,7 +171,10 @@ func (c *faucetCfg) exec(context.Context, []string) error {
 	}
 
 	// Create a new logger
-	logger, _ := zap.NewDevelopment()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return err
+	}
 
 	// Create a new faucet with
 	// static gas estimation
