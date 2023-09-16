@@ -16,3 +16,6 @@ jobs:
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
+        with:
+          args:
+            --config=./.github/golangci.yml
