@@ -20,10 +20,13 @@ func prepareTransaction(
 	cfg prepareCfg,
 ) *std.Tx {
 	// Construct the transaction
-	msg := bank.MsgSend{
+	msg := vm.MsgCall{
 		FromAddress: cfg.fromAddress,
 		ToAddress:   cfg.toAddress,
-		Amount:      cfg.sendAmount,
+		PkgAddr: "gno.land/r/demo/chess/register",
+		Func: "RegisterPlayer",
+		Args: []string{"calleraddr", "token"},
+		Send:      cfg.sendAmount,
 	}
 
 	tx := &std.Tx{
