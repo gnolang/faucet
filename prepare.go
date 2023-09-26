@@ -7,25 +7,33 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/std"
 )
 
-// prepareCfg specifies the tx prepare configuration
-type prepareCfg struct {
-	sendAmount  std.Coins      // the amount to be sent
-	fromAddress crypto.Address // the faucet address
-	toAddress   crypto.Address // the beneficiary address
+// PrepareTxMessageFn is the callback method that
+// constructs the faucet fund transaction message
+type PrepareTxMessageFn func(PrepareCfg) std.Msg
+
+// PrepareCfg specifies the tx prepare configuration
+type PrepareCfg struct {
+	SendAmount  std.Coins      // the amount to be sent
+	FromAddress crypto.Address // the faucet address
+	ToAddress   crypto.Address // the beneficiary address
+}
+
+// defaultPrepareTxMessage constructs the default
+// native currency transfer message
+func defaultPrepareTxMessage(cfg PrepareCfg) std.Msg {
+	return bank.MsgSend{
+		FromAddress: cfg.FromAddress,
+		ToAddress:   cfg.ToAddress,
+		Amount:      cfg.SendAmount,
+	}
 }
 
 // prepareTransaction prepares the transaction for signing
 func prepareTransaction(
 	estimator estimate.Estimator,
-	cfg prepareCfg,
+	msg std.Msg,
 ) *std.Tx {
 	// Construct the transaction
-	msg := bank.MsgSend{
-		FromAddress: cfg.fromAddress,
-		ToAddress:   cfg.toAddress,
-		Amount:      cfg.sendAmount,
-	}
-
 	tx := &std.Tx{
 		Msgs:       []std.Msg{msg},
 		Signatures: nil,
