@@ -74,7 +74,7 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 			continue
 		}
 
-		// Run the method methodHandler
+		// Run the method handler
 		if err := f.transferFunds(beneficiary); err != nil {
 			f.logger.Debug(
 				unableToHandleRequest,

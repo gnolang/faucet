@@ -30,9 +30,10 @@ type Faucet struct {
 
 	mux *chi.Mux // HTTP routing
 
-	config      *config.Config // faucet configuration
-	middlewares []Middleware   // request middlewares
-	handlers    []Handler      // request handlers
+	config         *config.Config     // faucet configuration
+	middlewares    []Middleware       // request middlewares
+	handlers       []Handler          // request handlers
+	prepareTxMsgFn PrepareTxMessageFn // transaction message creator
 
 	sendAmount std.Coins // for fast lookup
 }
@@ -44,11 +45,12 @@ func NewFaucet(
 	opts ...Option,
 ) (*Faucet, error) {
 	f := &Faucet{
-		estimator:   estimator,
-		client:      client,
-		logger:      noop.New(),
-		config:      config.DefaultConfig(),
-		middlewares: nil, // no middlewares by default
+		estimator:      estimator,
+		client:         client,
+		logger:         noop.New(),
+		config:         config.DefaultConfig(),
+		prepareTxMsgFn: defaultPrepareTxMessage,
+		middlewares:    nil, // no middlewares by default
 
 		mux: chi.NewMux(),
 	}

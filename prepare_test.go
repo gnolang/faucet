@@ -36,13 +36,13 @@ func TestPrepareTransaction(t *testing.T) {
 	)
 
 	// Prepare the transaction
-	cfg := prepareCfg{
-		fromAddress: fromAddress,
-		toAddress:   toAddress,
-		sendAmount:  sendAmount,
+	cfg := PrepareCfg{
+		FromAddress: fromAddress,
+		ToAddress:   toAddress,
+		SendAmount:  sendAmount,
 	}
 
-	tx := prepareTransaction(mockEstimator, cfg)
+	tx := prepareTransaction(mockEstimator, defaultPrepareTxMessage(cfg))
 
 	// Make sure the transaction was created
 	require.NotNil(t, tx)

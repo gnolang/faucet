@@ -18,12 +18,12 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 	}
 
 	// Prepare the transaction
-	pCfg := prepareCfg{
-		fromAddress: fundAccount.GetAddress(),
-		toAddress:   address,
-		sendAmount:  f.sendAmount,
+	pCfg := PrepareCfg{
+		FromAddress: fundAccount.GetAddress(),
+		ToAddress:   address,
+		SendAmount:  f.sendAmount,
 	}
-	tx := prepareTransaction(f.estimator, pCfg)
+	tx := prepareTransaction(f.estimator, f.prepareTxMsgFn(pCfg))
 
 	// Sign the transaction
 	sCfg := signCfg{

@@ -34,3 +34,11 @@ func WithHandlers(handlers []Handler) Option {
 		f.handlers = append(f.handlers, handlers...)
 	}
 }
+
+// WithPrepareTxMessageFn specifies the faucet
+// transaction message constructor
+func WithPrepareTxMessageFn(prepareTxMsgFn PrepareTxMessageFn) Option {
+	return func(f *Faucet) {
+		f.prepareTxMsgFn = prepareTxMsgFn
+	}
+}
