@@ -21,24 +21,37 @@ var errInvalidBeneficiary = errors.New("invalid beneficiary address")
 
 // defaultHTTPHandler is the default faucet transfer handler
 func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
 	// Load the requests
 	requestBody, readErr := io.ReadAll(r.Body)
 	if readErr != nil {
 		http.Error(w, "unable to read request", http.StatusBadRequest)
-
 		return
 	}
 
-	// Extract the requests
-	requests, err := extractRequests(requestBody)
-	if err != nil {
-		http.Error(
-			w,
-			"invalid request body",
-			http.StatusBadRequest,
-		)
+	var requests Requests
 
-		return
+	if to := r.FormValue("toaddr"); to != "" {
+		requests = Requests{
+			{To: to},
+		}
+	} else {
+		// Extract the requests
+		requests, err = extractRequests(requestBody)
+		if err != nil {
+			http.Error(
+				w,
+				"invalid request body",
+				http.StatusBadRequest,
+			)
+
+			return
+		}
 	}
 
 	// Handle the requests
