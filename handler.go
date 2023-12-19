@@ -24,6 +24,7 @@ func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+
 		return
 	}
 
@@ -31,6 +32,7 @@ func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
 	requestBody, readErr := io.ReadAll(r.Body)
 	if readErr != nil {
 		http.Error(w, "unable to read request", http.StatusBadRequest)
+
 		return
 	}
 
