@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/gnolang/gno v0.0.0-20230914214026-ef6a55bf9db2
-	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-chi/chi/v5 v5.0.11
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.10.1
