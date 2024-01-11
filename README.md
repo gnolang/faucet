@@ -50,6 +50,16 @@ To run the faucet, start the built binary:
 ./build/faucet
 ```
 
+It should print something like the following. (Note the port number at the end.)
+```
+2024-01-11T12:47:27.826+0100	INFO	cmd/logger.go:17	faucet started at [::]:8545
+```
+
+4. To send coins to a single account, in a new terminal enter the following (change to the correct recipient address):
+```bash
+curl --location --request POST 'http://localhost:8545' --header 'Content-Type: application/json' --data '{"To": "g1juz2yxmdsa6audkp6ep9vfv80c8p5u76e03vvh"}'
+```
+
 ### As a library
 
 To add `faucet` to your Go project, simply run:
