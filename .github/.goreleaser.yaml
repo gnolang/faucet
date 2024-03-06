@@ -5,7 +5,8 @@ before:
     - go mod tidy
 
 builds:
-  - binary: faucet
+  - main: ./cmd
+    binary: faucet
     goos:
       - linux
       - darwin
