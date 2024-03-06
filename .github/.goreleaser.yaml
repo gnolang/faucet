@@ -36,7 +36,7 @@ signs:
 
 dockers:
   - image_templates:
-      - "ghcr.io/${{ github.repository }}:{{ .Tag }}"
+      - "ghcr.io/gnolang/faucet:{{ .Tag }}"
     dockerfile: Dockerfile
     build_flag_templates:
       - "--pull"
@@ -78,10 +78,10 @@ release:
   footer: |
     ### Container Images
 
-    https://ghcr.io/${{ github.repository }}:{{ .Tag }}
+    https://ghcr.io/gnolang/faucet:{{ .Tag }}
 
     For example:
     ```
-    docker pull ghcr.io/${{ github.repository }}:{{ .Tag }}
+    docker pull ghcr.io/gnolang/faucet:{{ .Tag }}
     ```
 
