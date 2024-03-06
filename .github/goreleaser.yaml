@@ -14,6 +14,9 @@ builds:
       - amd64
       - arm64
 
+gomod:
+  proxy: true
+
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
@@ -34,7 +37,7 @@ signs:
 dockers:
   - image_templates:
       - "ghcr.io/gnolang/faucet:{{ .Tag }}"
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.release
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
