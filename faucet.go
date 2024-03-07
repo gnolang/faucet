@@ -38,6 +38,8 @@ type Faucet struct {
 	sendAmount std.Coins // for fast lookup
 }
 
+var noopLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
+
 // NewFaucet creates a new instance of the Gno faucet server
 func NewFaucet(
 	estimator estimate.Estimator,
@@ -47,7 +49,7 @@ func NewFaucet(
 	f := &Faucet{
 		estimator:      estimator,
 		client:         client,
-		logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),
+		logger:         noopLogger,
 		config:         config.DefaultConfig(),
 		prepareTxMsgFn: defaultPrepareTxMessage,
 		middlewares:    nil, // no middlewares by default

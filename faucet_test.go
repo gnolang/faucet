@@ -1,8 +1,6 @@
 package faucet
 
 import (
-	"io"
-	"log/slog"
 	"net/http"
 	"testing"
 
@@ -136,7 +134,7 @@ func TestFaucet_NewFaucet(t *testing.T) {
 			&mockEstimator{},
 			&mockClient{},
 			WithConfig(config.DefaultConfig()),
-			WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))),
+			WithLogger(noopLogger),
 		)
 
 		assert.NotNil(t, f)
