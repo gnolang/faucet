@@ -1,11 +1,12 @@
 package faucet
 
 import (
+	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 
 	"github.com/gnolang/faucet/config"
-	"github.com/gnolang/faucet/log/noop"
 	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
@@ -135,7 +136,7 @@ func TestFaucet_NewFaucet(t *testing.T) {
 			&mockEstimator{},
 			&mockClient{},
 			WithConfig(config.DefaultConfig()),
-			WithLogger(noop.New()),
+			WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))),
 		)
 
 		assert.NotNil(t, f)
