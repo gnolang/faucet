@@ -35,7 +35,7 @@ type Faucet struct {
 	handlers       []Handler          // request handlers
 	prepareTxMsgFn PrepareTxMessageFn // transaction message creator
 
-	sendAmount std.Coins // for fast lookup
+	maxSendAmount std.Coins // the max send amount per drip
 }
 
 // NewFaucet creates a new instance of the Gno faucet server
@@ -74,8 +74,8 @@ func NewFaucet(
 	}
 
 	// Set the send amount
-	//nolint:errcheck // SendAmount is validated beforehand
-	f.sendAmount, _ = std.ParseCoins(f.config.SendAmount)
+	//nolint:errcheck // MaxSendAmount is validated beforehand
+	f.maxSendAmount, _ = std.ParseCoins(f.config.MaxSendAmount)
 
 	// Generate the in-memory keyring
 	f.keyring = memory.New(f.config.Mnemonic, f.config.NumAccounts)

@@ -19,7 +19,8 @@ type Requests []Request
 
 // Request is a single Faucet transfer request
 type Request struct {
-	To string `json:"to"`
+	To     string `json:"to"`
+	Amount string `json:"amount"`
 }
 
 type Responses []Response

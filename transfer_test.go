@@ -21,6 +21,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 
 		var (
 			fetchErr = errors.New("unable to fetch account")
+			amount   = std.NewCoins(std.NewCoin("ugnot", 1))
 
 			mockClient = &mockClient{
 				getAccountFn: func(_ crypto.Address) (std.Account, error) {
@@ -44,7 +45,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 		require.NotNil(t, f)
 
 		// Attempt the transfer
-		assert.ErrorIs(t, f.transferFunds(crypto.Address{}), errNoFundedAccount)
+		assert.ErrorIs(t, f.transferFunds(crypto.Address{}, amount), errNoFundedAccount)
 	})
 
 	t.Run("no funded accounts", func(t *testing.T) {
@@ -72,7 +73,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 
 		// Create faucet
 		cfg := config.DefaultConfig()
-		cfg.SendAmount = sendAmount.String()
+		cfg.MaxSendAmount = sendAmount.String()
 
 		f, err := NewFaucet(
 			mockEstimator,
@@ -84,7 +85,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 		require.NotNil(t, f)
 
 		// Attempt the transfer
-		assert.ErrorIs(t, f.transferFunds(crypto.Address{}), errNoFundedAccount)
+		assert.ErrorIs(t, f.transferFunds(crypto.Address{}, sendAmount), errNoFundedAccount)
 	})
 
 	t.Run("unable to sign transaction", func(t *testing.T) {
@@ -128,7 +129,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 
 		// Create faucet
 		cfg := config.DefaultConfig()
-		cfg.SendAmount = sendAmount.String()
+		cfg.MaxSendAmount = sendAmount.String()
 
 		f, err := NewFaucet(
 			mockEstimator,
@@ -143,7 +144,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 		require.NotNil(t, f)
 
 		// Attempt the transfer
-		assert.ErrorIs(t, f.transferFunds(crypto.Address{}), signErr)
+		assert.ErrorIs(t, f.transferFunds(crypto.Address{}, sendAmount), signErr)
 	})
 
 	t.Run("valid asset transfer", func(t *testing.T) {
@@ -201,7 +202,7 @@ func TestFaucet_TransferFunds(t *testing.T) {
 
 		// Create faucet
 		cfg := config.DefaultConfig()
-		cfg.SendAmount = sendAmount.String()
+		cfg.MaxSendAmount = sendAmount.String()
 
 		f, err := NewFaucet(
 			mockEstimator,
@@ -215,6 +216,6 @@ func TestFaucet_TransferFunds(t *testing.T) {
 		require.NotNil(t, f)
 
 		// Attempt the transfer
-		assert.NoError(t, f.transferFunds(crypto.Address{}))
+		assert.NoError(t, f.transferFunds(crypto.Address{}, sendAmount))
 	})
 }

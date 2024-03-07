@@ -11,7 +11,7 @@ import (
 const (
 	DefaultListenAddress = "0.0.0.0:8545"
 	DefaultChainID       = "dev"
-	DefaultSendAmount    = "1000000ugnot"
+	DefaultMaxSendAmount = "1000000ugnot"
 	//nolint:lll // Mnemonic is naturally long
 	DefaultMnemonic    = "source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast"
 	DefaultNumAccounts = uint64(1)
@@ -45,9 +45,9 @@ type Config struct {
 	// The mnemonic for the faucet
 	Mnemonic string `toml:"mnemonic"`
 
-	// The static send amount (native currency).
+	// The static max send amount (native currency).
 	// Format should be: <AMOUNT>ugnot
-	SendAmount string `toml:"send_amount"`
+	MaxSendAmount string `toml:"send_amount"`
 
 	// The number of faucet accounts,
 	// based on the mnemonic (account 0, index x)
@@ -59,7 +59,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		ListenAddress: DefaultListenAddress,
 		ChainID:       DefaultChainID,
-		SendAmount:    DefaultSendAmount,
+		MaxSendAmount: DefaultMaxSendAmount,
 		Mnemonic:      DefaultMnemonic,
 		NumAccounts:   DefaultNumAccounts,
 		CORSConfig:    DefaultCORSConfig(),
@@ -79,7 +79,7 @@ func ValidateConfig(config *Config) error {
 	}
 
 	// validate the send amount
-	if !amountRegex.MatchString(config.SendAmount) {
+	if !amountRegex.MatchString(config.MaxSendAmount) {
 		return ErrInvalidSendAmount
 	}
 

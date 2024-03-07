@@ -82,7 +82,7 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 
 	var (
 		gasFee     = std.MustParseCoin("1ugnot")
-		sendAmount = std.MustParseCoins(config.DefaultSendAmount)
+		sendAmount = std.MustParseCoins(config.DefaultMaxSendAmount)
 	)
 
 	var (
@@ -295,7 +295,7 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 
 	var (
 		gasFee     = std.MustParseCoin("1ugnot")
-		sendAmount = std.MustParseCoins(config.DefaultSendAmount)
+		sendAmount = std.MustParseCoins(config.DefaultMaxSendAmount)
 	)
 
 	var (
@@ -569,7 +569,7 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 
 	var (
 		gasFee     = std.MustParseCoin("1ugnot")
-		sendAmount = std.MustParseCoins(config.DefaultSendAmount)
+		sendAmount = std.MustParseCoins(config.DefaultMaxSendAmount)
 	)
 
 	var (
@@ -712,4 +712,102 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 
 	// Validate the broadcast tx
 	assert.Nil(t, capturedTxs)
+}
+
+func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
+	t.Parallel()
+
+	var (
+		gasFee        = std.MustParseCoin("1ugnot")
+		maxSendAmount = std.MustParseCoins(config.DefaultMaxSendAmount)
+	)
+
+	testTable := []struct {
+		name       string
+		sendAmount std.Coins
+	}{
+		{
+			"invalid send amount",
+			std.NewCoins(std.NewCoin("atom", 10)),
+		},
+		{
+			"excessive send amount",
+			maxSendAmount.Add(std.MustParseCoins("100ugnot")),
+		},
+	}
+
+	for _, testCase := range testTable {
+		testCase := testCase
+
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			var (
+				validAddress = crypto.MustAddressFromString("g155n659f89cfak0zgy575yqma64sm4tv6exqk99")
+
+				singleInvalidRequest = Request{
+					To:     validAddress.String(),
+					Amount: testCase.sendAmount.String(),
+				}
+			)
+
+			encodedSingleInvalidRequest, err := json.Marshal(
+				singleInvalidRequest,
+			)
+			require.NoError(t, err)
+
+			getFaucetURL := func(address string) string {
+				return fmt.Sprintf("http://%s", address)
+			}
+
+			// Create a new faucet with default params
+			cfg := config.DefaultConfig()
+			cfg.ListenAddress = fmt.Sprintf("127.0.0.1:%d", getFreePort(t))
+			cfg.MaxSendAmount = maxSendAmount.String()
+
+			f, err := NewFaucet(
+				static.New(gasFee, 100000),
+				&mockClient{},
+				WithConfig(cfg),
+			)
+
+			require.NoError(t, err)
+			require.NotNil(t, f)
+
+			// Start the faucet
+			ctx, cancelFn := context.WithCancel(context.Background())
+			defer cancelFn()
+
+			g, gCtx := errgroup.WithContext(ctx)
+
+			g.Go(func() error {
+				return f.Serve(gCtx)
+			})
+
+			url := getFaucetURL(f.config.ListenAddress)
+
+			// Wait for the faucet to be started
+			waitForServer(t, url)
+
+			// Execute the request
+			respRaw, err := http.Post(
+				url,
+				jsonMimeType,
+				bytes.NewBuffer(encodedSingleInvalidRequest),
+			)
+			require.NoError(t, err)
+
+			respBytes, err := io.ReadAll(respRaw.Body)
+			require.NoError(t, err)
+
+			response := decodeResponse[Response](t, respBytes)
+
+			assert.Contains(t, response.Error, errInvalidSendAmount.Error())
+			assert.Equal(t, unableToHandleRequest, response.Result)
+
+			// Stop the faucet and wait for it to finish
+			cancelFn()
+			assert.NoError(t, g.Wait())
+		})
+	}
 }
