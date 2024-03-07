@@ -717,10 +717,8 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
 	t.Parallel()
 
-	var (
-		gasFee        = std.MustParseCoin("1ugnot")
-		maxSendAmount = std.MustParseCoins(config.DefaultMaxSendAmount)
-	)
+	// Extract the default send amount
+	maxSendAmount := std.MustParseCoins(config.DefaultMaxSendAmount)
 
 	testTable := []struct {
 		name       string
@@ -744,6 +742,7 @@ func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
 
 			var (
 				validAddress = crypto.MustAddressFromString("g155n659f89cfak0zgy575yqma64sm4tv6exqk99")
+				gasFee       = std.MustParseCoin("1ugnot")
 
 				singleInvalidRequest = Request{
 					To:     validAddress.String(),

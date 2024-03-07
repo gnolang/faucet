@@ -115,7 +115,7 @@ func (c *faucetCfg) registerRootFlags(fs *flag.FlagSet) {
 		&c.config.MaxSendAmount,
 		"send-amount",
 		config.DefaultMaxSendAmount,
-		"the static max send amount per drip(native currency)",
+		"the static max send amount per drip (native currency)",
 	)
 
 	fs.StringVar(
