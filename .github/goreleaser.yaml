@@ -36,6 +36,7 @@ signs:
 
 dockers:
   - image_templates:
+      - "ghcr.io/gnolang/faucet:latest"
       - "ghcr.io/gnolang/faucet:{{ .Tag }}"
     dockerfile: Dockerfile.release
     build_flag_templates:
