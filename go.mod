@@ -9,7 +9,6 @@ require (
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.10.1
 	github.com/stretchr/testify v1.9.0
-	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.6.0
 )
 
