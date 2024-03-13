@@ -10,9 +10,9 @@ import (
 var errNoFundedAccount = errors.New("no funded account found")
 
 // transferFunds transfers funds to the given address
-func (f *Faucet) transferFunds(address crypto.Address) error {
+func (f *Faucet) transferFunds(address crypto.Address, amount std.Coins) error {
 	// Find an account that has balance to cover the transfer
-	fundAccount, err := f.findFundedAccount()
+	fundAccount, err := f.findFundedAccount(amount)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 	pCfg := PrepareCfg{
 		FromAddress: fundAccount.GetAddress(),
 		ToAddress:   address,
-		SendAmount:  f.sendAmount,
+		SendAmount:  amount,
 	}
 	tx := prepareTransaction(f.estimator, f.prepareTxMsgFn(pCfg))
 
@@ -46,12 +46,12 @@ func (f *Faucet) transferFunds(address crypto.Address) error {
 
 // findFundedAccount finds an account
 // whose balance is enough to cover the send amount
-func (f *Faucet) findFundedAccount() (std.Account, error) {
+func (f *Faucet) findFundedAccount(amount std.Coins) (std.Account, error) {
 	// A funded account is an account that can
 	// cover the initial transfer fee, as well
 	// as the send amount
 	estimatedFee := f.estimator.EstimateGasFee()
-	requiredFunds := f.sendAmount.Add(std.NewCoins(estimatedFee))
+	requiredFunds := amount.Add(std.NewCoins(estimatedFee))
 
 	for _, address := range f.keyring.GetAddresses() {
 		// Fetch the account

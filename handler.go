@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 
 	"github.com/gnolang/faucet/writer"
 	httpWriter "github.com/gnolang/faucet/writer/http"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
+	"github.com/gnolang/gno/tm2/pkg/std"
 )
 
 const (
@@ -17,7 +19,12 @@ const (
 	faucetSuccess         = "successfully executed faucet transfer"
 )
 
-var errInvalidBeneficiary = errors.New("invalid beneficiary address")
+var (
+	errInvalidBeneficiary = errors.New("invalid beneficiary address")
+	errInvalidSendAmount  = errors.New("invalid send amount")
+)
+
+var amountRegex = regexp.MustCompile(`^\d+ugnot$`)
 
 // defaultHTTPHandler is the default faucet transfer handler
 func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
@@ -74,8 +81,39 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 			continue
 		}
 
+		// Extract the send amount
+		amount, err := extractSendAmount(baseRequest)
+		if err != nil {
+			// Save the error response
+			responses[i] = Response{
+				Result: unableToHandleRequest,
+				Error:  err.Error(),
+			}
+
+			continue
+		}
+
+		// Check if the amount is set
+		if amount.IsZero() {
+			// Drip amount is not set, use
+			// the max faucet drip amount
+			amount = f.maxSendAmount
+		}
+
+		// Check if the amount exceeds the max
+		// drip amount for the faucet
+		if amount.IsAllGT(f.maxSendAmount) {
+			// Save the error response
+			responses[i] = Response{
+				Result: unableToHandleRequest,
+				Error:  errInvalidSendAmount.Error(),
+			}
+
+			continue
+		}
+
 		// Run the method handler
-		if err := f.transferFunds(beneficiary); err != nil {
+		if err := f.transferFunds(beneficiary, amount); err != nil {
 			f.logger.Debug(
 				unableToHandleRequest,
 				"request",
@@ -143,4 +181,24 @@ func extractBeneficiary(request Request) (crypto.Address, error) {
 	}
 
 	return beneficiary, nil
+}
+
+// extractSendAmount extracts the drip amount from the base faucet request, if any
+func extractSendAmount(request Request) (std.Coins, error) {
+	// Check if the amount is set
+	if request.Amount == "" {
+		return std.Coins{}, nil
+	}
+
+	// Validate the send amount is valid
+	if !amountRegex.MatchString(request.Amount) {
+		return std.Coins{}, errInvalidSendAmount
+	}
+
+	amount, err := std.ParseCoins(request.Amount)
+	if err != nil {
+		return std.Coins{}, fmt.Errorf("%w, %w", errInvalidSendAmount, err)
+	}
+
+	return amount, nil
 }

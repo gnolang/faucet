@@ -31,7 +31,7 @@ func TestConfig_ValidateConfig(t *testing.T) {
 		t.Parallel()
 
 		cfg := DefaultConfig()
-		cfg.SendAmount = "1000goo" // invalid denom
+		cfg.MaxSendAmount = "1000goo" // invalid denom
 
 		assert.ErrorIs(t, ValidateConfig(cfg), ErrInvalidSendAmount)
 	})

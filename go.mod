@@ -3,12 +3,12 @@ module github.com/gnolang/faucet
 go 1.21
 
 require (
-	github.com/gnolang/gno v0.0.0-20240308113041-45c8f900a1a3
+	github.com/gnolang/gno v0.0.0-20240313211052-3481a03c98bc
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.10.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.6.0
 )
 
@@ -22,8 +22,8 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/jaekwon/testify v1.6.1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
-	github.com/linxGnu/grocksdb v1.8.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
