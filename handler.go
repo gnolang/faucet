@@ -190,7 +190,7 @@ func extractSendAmount(request Request) (std.Coins, error) {
 		return std.Coins{}, nil
 	}
 
-	// Validate the send amount valid
+	// Validate the send amount is valid
 	if !amountRegex.MatchString(request.Amount) {
 		return std.Coins{}, errInvalidSendAmount
 	}
