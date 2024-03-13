@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
@@ -13,8 +15,6 @@ import (
 	"github.com/gnolang/faucet/estimate"
 	"github.com/gnolang/faucet/keyring"
 	"github.com/gnolang/faucet/keyring/memory"
-	"github.com/gnolang/faucet/log"
-	"github.com/gnolang/faucet/log/noop"
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
@@ -24,7 +24,7 @@ import (
 // Faucet is a standard Gno faucet
 type Faucet struct {
 	estimator estimate.Estimator // gas pricing estimations
-	logger    log.Logger         // log feedback
+	logger    *slog.Logger       // log feedback
 	client    client.Client      // TM2 client
 	keyring   keyring.Keyring    // the faucet keyring
 
@@ -38,6 +38,8 @@ type Faucet struct {
 	maxSendAmount std.Coins // the max send amount per drip
 }
 
+var noopLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
+
 // NewFaucet creates a new instance of the Gno faucet server
 func NewFaucet(
 	estimator estimate.Estimator,
@@ -47,7 +49,7 @@ func NewFaucet(
 	f := &Faucet{
 		estimator:      estimator,
 		client:         client,
-		logger:         noop.New(),
+		logger:         noopLogger,
 		config:         config.DefaultConfig(),
 		prepareTxMsgFn: defaultPrepareTxMessage,
 		middlewares:    nil, // no middlewares by default

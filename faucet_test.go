@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gnolang/faucet/config"
-	"github.com/gnolang/faucet/log/noop"
 	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
@@ -135,7 +134,7 @@ func TestFaucet_NewFaucet(t *testing.T) {
 			&mockEstimator{},
 			&mockClient{},
 			WithConfig(config.DefaultConfig()),
-			WithLogger(noop.New()),
+			WithLogger(noopLogger),
 		)
 
 		assert.NotNil(t, f)

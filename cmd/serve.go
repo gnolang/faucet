@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"strconv"
@@ -18,7 +19,6 @@ import (
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/peterbourgon/ff/v3/fftoml"
-	"go.uber.org/zap"
 )
 
 const (
@@ -179,17 +179,14 @@ func (c *faucetCfg) exec(_ context.Context, _ []string) error {
 	}
 
 	// Create a new logger
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return err
-	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create a new faucet with
 	// static gas estimation
 	f, err := faucet.NewFaucet(
 		static.New(gasFee, gasWanted),
 		tm2Client.NewClient(c.remote),
-		faucet.WithLogger(newCommandLogger(logger)),
+		faucet.WithLogger(logger),
 		faucet.WithConfig(c.config),
 	)
 	if err != nil {

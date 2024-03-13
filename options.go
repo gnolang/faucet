@@ -1,14 +1,15 @@
 package faucet
 
 import (
+	"log/slog"
+
 	"github.com/gnolang/faucet/config"
-	"github.com/gnolang/faucet/log"
 )
 
 type Option func(f *Faucet)
 
 // WithLogger specifies the logger for the faucet
-func WithLogger(l log.Logger) Option {
+func WithLogger(l *slog.Logger) Option {
 	return func(f *Faucet) {
 		f.logger = l
 	}
