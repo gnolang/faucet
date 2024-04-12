@@ -1,5 +1,4 @@
-FROM alpine
-
-COPY faucet /usr/local/bin/gnofaucet
-
-ENTRYPOINT [ "/usr/local/bin/faucet" ]
+FROM scratch
+COPY faucet /
+ENTRYPOINT [ "/faucet" ]
+CMD [ "serve" ]
