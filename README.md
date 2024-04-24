@@ -47,8 +47,11 @@ make build
 
 To run the faucet, start the built binary:
 ```bash
-./build/faucet
+./build/faucet --mnemonic "<faucet_account_mnemonic>"
 ```
+
+The provided mnemonic will be used to derive accounts which will be used to serve
+funds to users. Make sure that the accounts derived from it are well funded.
 
 It should print something like the following. (Note the port number at the end.)
 ```
