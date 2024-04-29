@@ -43,7 +43,8 @@ func TestSignTransaction(t *testing.T) {
 
 		// Create a dummy tx
 		tx := &std.Tx{}
-		expectedSignBytes := tx.GetSignBytes(chainID, accountNumber, sequence)
+		expectedSignBytes, err := tx.GetSignBytes(chainID, accountNumber, sequence)
+		require.NoError(t, err)
 
 		cfg := signCfg{
 			chainID:       chainID,
@@ -89,7 +90,8 @@ func TestSignTransaction(t *testing.T) {
 
 		// Create a dummy tx
 		tx := &std.Tx{}
-		expectedSignBytes := tx.GetSignBytes(chainID, accountNumber, sequence)
+		expectedSignBytes, err := tx.GetSignBytes(chainID, accountNumber, sequence)
+		require.NoError(t, err)
 
 		cfg := signCfg{
 			chainID:       chainID,

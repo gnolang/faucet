@@ -181,11 +181,17 @@ func (c *faucetCfg) exec(_ context.Context, _ []string) error {
 	// Create a new logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
+	// Create the tm2 client
+	client, err := tm2Client.NewClient(c.remote)
+	if err != nil {
+		return fmt.Errorf("unable to create client, %w", err)
+	}
+
 	// Create a new faucet with
 	// static gas estimation
 	f, err := faucet.NewFaucet(
 		static.New(gasFee, gasWanted),
-		tm2Client.NewClient(c.remote),
+		client,
 		faucet.WithLogger(logger),
 		faucet.WithConfig(c.config),
 	)

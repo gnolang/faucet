@@ -18,11 +18,14 @@ type signCfg struct {
 // the provided key and config
 func signTransaction(tx *std.Tx, key crypto.PrivKey, cfg signCfg) error {
 	// Get the sign bytes
-	signBytes := tx.GetSignBytes(
+	signBytes, err := tx.GetSignBytes(
 		cfg.chainID,
 		cfg.accountNumber,
 		cfg.sequence,
 	)
+	if err != nil {
+		return fmt.Errorf("unable to get tx signature payload, %w", err)
+	}
 
 	// Sign the transaction
 	signature, err := key.Sign(signBytes)
