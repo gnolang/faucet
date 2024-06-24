@@ -3,7 +3,7 @@ module github.com/gnolang/faucet
 go 1.21
 
 require (
-	github.com/gnolang/gno v0.0.0-20240429120125-3832b1312d7d
+	github.com/gnolang/gno v0.1.0-nightly.20240620
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
@@ -34,6 +34,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.25.0 // indirect
 	go.opentelemetry.io/otel/trace v1.25.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.1.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/mod v0.16.0 // indirect
