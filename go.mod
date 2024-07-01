@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/gnolang/gno v0.0.0-20240429120125-3832b1312d7d
-	github.com/go-chi/chi/v5 v5.0.12
+	github.com/go-chi/chi/v5 v5.1.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.10.1
