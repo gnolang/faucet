@@ -103,6 +103,9 @@ func NewFaucet(
 		f.mux.Post(handler.Pattern, handler.HandlerFunc)
 	}
 
+	// Register the health check handler
+	f.mux.Get("/healthcheck", f.healthCheckHandler)
+
 	return f, nil
 }
 

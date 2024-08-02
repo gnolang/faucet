@@ -202,3 +202,9 @@ func extractSendAmount(request Request) (std.Coins, error) {
 
 	return amount, nil
 }
+
+// healthCheckHandler is the default health check handler for the faucet
+func (f *Faucet) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
