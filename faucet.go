@@ -104,7 +104,7 @@ func NewFaucet(
 	}
 
 	// Register the health check handler
-	f.mux.Get("/healthcheck", f.healthCheckHandler)
+	f.mux.Get("/health", f.healthCheckHandler)
 
 	return f, nil
 }
