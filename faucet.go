@@ -98,13 +98,13 @@ func NewFaucet(
 		f.mux.Use(middleware)
 	}
 
+	// Register the health check handler
+	f.mux.Get("/health", f.healthcheckHandler)
+
 	// Set up the request handlers
 	for _, handler := range f.handlers {
 		f.mux.Post(handler.Pattern, handler.HandlerFunc)
 	}
-
-	// Register the health check handler
-	f.mux.Get("/health", f.healthcheckHandler)
 
 	return f, nil
 }
