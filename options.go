@@ -43,10 +43,3 @@ func WithPrepareTxMessageFn(prepareTxMsgFn PrepareTxMessageFn) Option {
 		f.prepareTxMsgFn = prepareTxMsgFn
 	}
 }
-
-// WithHealthcheck specifies whether to enable the health check
-func WithHealthcheck(enable bool) Option {
-	return func(f *Faucet) {
-		f.healthcheck = enable
-	}
-}

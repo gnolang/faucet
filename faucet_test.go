@@ -141,43 +141,6 @@ func TestFaucet_NewFaucet(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("without healthcheck", func(t *testing.T) {
-		t.Parallel()
-
-		f, err := NewFaucet(
-			&mockEstimator{},
-			&mockClient{},
-			WithConfig(config.DefaultConfig()),
-			WithHealthcheck(false),
-		)
-
-		require.NotNil(t, f)
-		assert.NoError(t, err)
-
-		// Make sure the healthcheck handler was not set
-		routes := f.mux.Routes()
-		assert.Len(t, routes, 1) // base "/" handler only
-
-	})
-
-	t.Run("with healthcheck", func(t *testing.T) {
-		t.Parallel()
-
-		f, err := NewFaucet(
-			&mockEstimator{},
-			&mockClient{},
-			WithConfig(config.DefaultConfig()),
-		)
-
-		require.NotNil(t, f)
-		assert.NoError(t, err)
-
-		// Make sure the healthcheck handler was set
-		routes := f.mux.Routes()
-		assert.Len(t, routes, 2) // base "/" & "/healthcheck" handlers
-
-	})
-
 	t.Run("with prepare transaction message callback", func(t *testing.T) {
 		t.Parallel()
 

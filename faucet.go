@@ -34,7 +34,6 @@ type Faucet struct {
 	middlewares    []Middleware       // request middlewares
 	handlers       []Handler          // request handlers
 	prepareTxMsgFn PrepareTxMessageFn // transaction message creator
-	healthcheck    bool               // enable health check
 
 	maxSendAmount std.Coins // the max send amount per drip
 }
@@ -53,8 +52,7 @@ func NewFaucet(
 		logger:         noopLogger,
 		config:         config.DefaultConfig(),
 		prepareTxMsgFn: defaultPrepareTxMessage,
-		middlewares:    nil,  // no middlewares by default
-		healthcheck:    true, // enable health check by default
+		middlewares:    nil, // no middlewares by default
 
 		mux: chi.NewMux(),
 	}
@@ -106,9 +104,7 @@ func NewFaucet(
 	}
 
 	// Register the health check handler
-	if f.healthcheck {
-		f.mux.Get("/health", f.healthcheckHandler)
-	}
+	f.mux.Get("/health", f.healthcheckHandler)
 
 	return f, nil
 }
