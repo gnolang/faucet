@@ -122,7 +122,7 @@ func TestFaucet_NewFaucet(t *testing.T) {
 
 		// Make sure the handler was set
 		routes := f.mux.Routes()
-		require.Len(t, routes, len(handlers)+2) // base "/" & "/healthcheck" handlers as well
+		require.Len(t, routes, len(handlers)+2) // base "/" & "/health" handlers as well
 
 		assert.Equal(t, handlers[0].Pattern, routes[2].Pattern)
 	})
