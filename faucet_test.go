@@ -122,9 +122,9 @@ func TestFaucet_NewFaucet(t *testing.T) {
 
 		// Make sure the handler was set
 		routes := f.mux.Routes()
-		require.Len(t, routes, len(handlers)+1) // base "/" handler as well
+		require.Len(t, routes, len(handlers)+2) // base "/" & "/health" handlers as well
 
-		assert.Equal(t, handlers[0].Pattern, routes[1].Pattern)
+		assert.Equal(t, handlers[0].Pattern, routes[2].Pattern)
 	})
 
 	t.Run("with logger", func(t *testing.T) {

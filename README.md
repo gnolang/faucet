@@ -63,6 +63,11 @@ It should print something like the following. (Note the port number at the end.)
 curl --location --request POST 'http://localhost:8545' --header 'Content-Type: application/json' --data '{"To": "g1juz2yxmdsa6audkp6ep9vfv80c8p5u76e03vvh"}'
 ```
 
+5. To ensure the faucet is listening to requests, you can ping the health endpoint:
+```bash
+curl --location --request GET 'http://localhost:8545/health'
+```
+
 ### As a library
 
 To add `faucet` to your Go project, simply run:
