@@ -93,18 +93,22 @@ func NewFaucet(
 		f.mux.Use(corsMiddleware.Handler)
 	}
 
-	// Set up additional middlewares
-	for _, middleware := range f.middlewares {
-		f.mux.Use(middleware)
-	}
-
 	// Register the health check handler
 	f.mux.Get("/health", f.healthcheckHandler)
 
-	// Set up the request handlers
-	for _, handler := range f.handlers {
-		f.mux.Post(handler.Pattern, handler.HandlerFunc)
-	}
+	// Branch off another route group, so they don't influence
+	// "standard" routes like health
+	f.mux.Group(func(r chi.Router) {
+		// Apply user middlewares
+		for _, middleware := range f.middlewares {
+			r.Use(middleware)
+		}
+
+		// Apply standard and custom route handlers
+		for _, handler := range f.handlers {
+			r.Post(handler.Pattern, handler.HandlerFunc)
+		}
+	})
 
 	return f, nil
 }
