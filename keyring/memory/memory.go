@@ -22,6 +22,7 @@ func New(mnemonic string, numAccounts uint64) *Keyring {
 	seed := bip39.NewSeed(mnemonic, "")
 
 	for i := uint64(0); i < numAccounts; i++ {
+		//nolint:gosec // i ranges up to numAccounts which won't overflow uint32
 		key := generateKeyFromSeed(seed, uint32(i))
 		address := key.PubKey().Address()
 
