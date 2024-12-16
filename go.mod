@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/gnolang/gno v0.0.0-20241127025539-d8589b06b14c
-	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-chi/chi/v5 v5.2.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.11.1
