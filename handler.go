@@ -1,13 +1,13 @@
 package faucet
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 
+	"github.com/gnolang/faucet/spec"
 	"github.com/gnolang/faucet/writer"
 	httpWriter "github.com/gnolang/faucet/writer/http"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
@@ -19,10 +19,19 @@ const (
 	faucetSuccess         = "successfully executed faucet transfer"
 )
 
+const DefaultDripMethod = "drip" // the default JSON-RPC method for a faucet drip
+
 var (
 	errInvalidBeneficiary = errors.New("invalid beneficiary address")
 	errInvalidSendAmount  = errors.New("invalid send amount")
+	errInvalidMethod      = errors.New("unknown RPC method call")
 )
+
+// drip is a single Faucet transfer request
+type drip struct {
+	amount std.Coins
+	to     crypto.Address
+}
 
 var amountRegex = regexp.MustCompile(`^\d+ugnot$`)
 
@@ -31,13 +40,17 @@ func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
 	// Load the requests
 	requestBody, readErr := io.ReadAll(r.Body)
 	if readErr != nil {
-		http.Error(w, "unable to read request", http.StatusBadRequest)
+		http.Error(
+			w,
+			"unable to read request",
+			http.StatusBadRequest,
+		)
 
 		return
 	}
 
 	// Extract the requests
-	requests, err := extractRequests(requestBody)
+	requests, err := spec.ExtractBaseRequests(requestBody)
 	if err != nil {
 		http.Error(
 			w,
@@ -57,9 +70,9 @@ func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleRequest is the common default faucet handler
-func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) {
+func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests spec.BaseJSONRequests) {
 	// Parse all JSON-RPC requests
-	responses := make(Responses, len(requests))
+	responses := make(spec.BaseJSONResponses, len(requests))
 
 	for i, baseRequest := range requests {
 		// Log the request
@@ -69,51 +82,77 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 			baseRequest,
 		)
 
-		// Extract the beneficiary
-		beneficiary, err := extractBeneficiary(baseRequest)
-		if err != nil {
-			// Save the error response
-			responses[i] = Response{
-				Result: unableToHandleRequest,
-				Error:  err.Error(),
-			}
+		// Make sure it's a valid base request
+		if !spec.IsValidBaseRequest(baseRequest) {
+			// Marshal the JSON-RPC error
+			responses[i] = spec.NewJSONResponse(
+				baseRequest.ID,
+				nil,
+				spec.NewJSONError(
+					"invalid JSON-RPC 2.0 request",
+					spec.InvalidRequestErrorCode,
+				),
+			)
 
 			continue
 		}
 
-		// Extract the send amount
-		amount, err := extractSendAmount(baseRequest)
+		// Make sure the method called on / is the drip method
+		if baseRequest.Method != DefaultDripMethod {
+			// Marshal the JSON-RPC error
+			responses[i] = spec.NewJSONResponse(
+				baseRequest.ID,
+				nil,
+				spec.NewJSONError(
+					errInvalidMethod.Error(),
+					spec.MethodNotFoundErrorCode,
+				),
+			)
+
+			continue
+		}
+
+		// Extract the drip request
+		dripRequest, err := extractDripRequest(baseRequest.Params)
 		if err != nil {
-			// Save the error response
-			responses[i] = Response{
-				Result: unableToHandleRequest,
-				Error:  err.Error(),
-			}
+			// Marshal the JSON-RPC error
+			responses[i] = spec.NewJSONResponse(
+				baseRequest.ID,
+				nil,
+				spec.NewJSONError(
+					err.Error(),
+					spec.InvalidParamsErrorCode,
+				),
+			)
 
 			continue
 		}
 
 		// Check if the amount is set
-		if amount.IsZero() {
-			// Drip amount is not set, use
+		if dripRequest.amount.IsZero() {
+			// drip amount is not set, use
 			// the max faucet drip amount
-			amount = f.maxSendAmount
+			dripRequest.amount = f.maxSendAmount
 		}
 
 		// Check if the amount exceeds the max
 		// drip amount for the faucet
-		if amount.IsAllGT(f.maxSendAmount) {
-			// Save the error response
-			responses[i] = Response{
-				Result: unableToHandleRequest,
-				Error:  errInvalidSendAmount.Error(),
-			}
+		if dripRequest.amount.IsAllGT(f.maxSendAmount) {
+			// Marshal the JSON-RPC error
+			responses[i] = spec.NewJSONResponse(
+				baseRequest.ID,
+				nil,
+				spec.NewJSONError(
+					errInvalidSendAmount.Error(),
+					spec.InvalidRequestErrorCode,
+				),
+			)
 
 			continue
 		}
 
 		// Run the method handler
-		if err := f.transferFunds(beneficiary, amount); err != nil {
+		if err := f.transferFunds(dripRequest.to, dripRequest.amount); err != nil {
 			f.logger.Debug(
 				unableToHandleRequest,
 				"request",
@@ -122,17 +161,20 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 				err,
 			)
 
-			responses[i] = Response{
-				Result: unableToHandleRequest,
-				Error:  err.Error(),
-			}
+			responses[i] = spec.NewJSONResponse(
+				baseRequest.ID,
+				nil,
+				spec.GenerateResponseError(err),
+			)
 
 			continue
 		}
 
-		responses[i] = Response{
-			Result: faucetSuccess,
-		}
+		responses[i] = spec.NewJSONResponse(
+			baseRequest.ID,
+			faucetSuccess,
+			nil,
+		)
 	}
 
 	if len(responses) == 1 {
@@ -146,61 +188,42 @@ func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests Requests) 
 	writer.WriteResponse(responses)
 }
 
-// extractRequests extracts the base JSON requests from the request body
-func extractRequests(requestBody []byte) (Requests, error) {
-	// Extract the request
-	var requests Requests
-
-	// Check if the request is a batch request
-	if err := json.Unmarshal(requestBody, &requests); err != nil {
-		// Try to get a single JSON request, since this is not a batch
-		var baseRequest Request
-		if err := json.Unmarshal(requestBody, &baseRequest); err != nil {
-			return nil, err
-		}
-
-		requests = Requests{
-			baseRequest,
-		}
-	}
-
-	return requests, nil
-}
-
-// extractBeneficiary extracts the beneficiary from the base faucet request
-func extractBeneficiary(request Request) (crypto.Address, error) {
-	// Validate the beneficiary address is set
-	if request.To == "" {
-		return crypto.Address{}, errInvalidBeneficiary
+// extractDripRequest extracts the base drip params from the request
+func extractDripRequest(params []any) (*drip, error) {
+	// Extract the drip params
+	if len(params) < 1 {
+		return nil, errInvalidBeneficiary
 	}
 
 	// Validate the beneficiary address is valid
-	beneficiary, err := crypto.AddressFromBech32(request.To)
+	beneficiary, err := crypto.AddressFromBech32(params[0].(string))
 	if err != nil {
-		return crypto.Address{}, fmt.Errorf("%w, %w", errInvalidBeneficiary, err)
-	}
-
-	return beneficiary, nil
-}
-
-// extractSendAmount extracts the drip amount from the base faucet request, if any
-func extractSendAmount(request Request) (std.Coins, error) {
-	// Check if the amount is set
-	if request.Amount == "" {
-		return std.Coins{}, nil
+		return nil, fmt.Errorf("%w, %w", errInvalidBeneficiary, err)
 	}
 
 	// Validate the send amount is valid
-	if !amountRegex.MatchString(request.Amount) {
-		return std.Coins{}, errInvalidSendAmount
+	if len(params) == 1 {
+		// No amount specified
+		return &drip{
+			to:     beneficiary,
+			amount: std.Coins{},
+		}, nil
 	}
 
-	amount, err := std.ParseCoins(request.Amount)
+	amountStr := params[1].(string)
+	if !amountRegex.MatchString(amountStr) {
+		return nil, errInvalidSendAmount
+	}
+
+	amount, err := std.ParseCoins(amountStr)
 	if err != nil {
-		return std.Coins{}, fmt.Errorf("%w, %w", errInvalidSendAmount, err)
+		return nil, fmt.Errorf("%w, %w", errInvalidSendAmount, err)
 	}
 
-	return amount, nil
+	return &drip{
+		to:     beneficiary,
+		amount: amount,
+	}, nil
 }
 
 // healthcheckHandler is the default health check handler for the faucet
