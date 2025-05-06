@@ -5,6 +5,27 @@
 `faucet` is a versatile command-line interface (CLI) tool and library designed to effortlessly deploy a faucet server
 for Gno Tendermint 2 networks.
 
+### Default endpoint (root)
+
+The `faucet` adopts the [JSON-RPC 2.0 standard](https://www.jsonrpc.org/specification) for requests / responses.
+
+By default, the `/` endpoint is the home of the `drip` method, to handle faucet drips. The first parameter is the
+beneficiary address, and the second one is the string representation of the drip amount (`std.Coins`).
+
+This can of course be overwritten with custom handling logic by the faucet creator (see below).
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 0,
+  "method": "drip",
+  "params": [
+    "g1e6gxg5tvc55mwsn7t7dymmlasratv7mkv0rap2",
+    "1000ugnot"
+  ]
+}
+```
+
 ## Key Features
 
 ### Customizability
@@ -46,6 +67,7 @@ make build
 3. Run the faucet
 
 To run the faucet, start the built binary:
+
 ```bash
 ./build/faucet --mnemonic "<faucet_account_mnemonic>"
 ```
@@ -54,16 +76,19 @@ The provided mnemonic will be used to derive accounts which will be used to serv
 funds to users. Make sure that the accounts derived from it are well funded.
 
 It should print something like the following. (Note the port number at the end.)
+
 ```
 2024-01-11T12:47:27.826+0100	INFO	cmd/logger.go:17	faucet started at [::]:8545
 ```
 
 4. To send coins to a single account, in a new terminal enter the following (change to the correct recipient address):
+
 ```bash
-curl --location --request POST 'http://localhost:8545' --header 'Content-Type: application/json' --data '{"To": "g1juz2yxmdsa6audkp6ep9vfv80c8p5u76e03vvh"}'
+curl --location --request POST 'http://localhost:8545' --header 'Content-Type: application/json' --data '{ "jsonrpc": "2.0", "id": 0, "method": "drip", "params": [ "g1e6gxg5tvc55mwsn7t7dymmlasratv7mkv0rap2", "1000ugnot" ] }'
 ```
 
-5. To ensure the faucet is listening to requests, you can ping the health endpoint:
+5. To ensure the faucet is listening to requests, you can ping the health endpoint (returns a simple status 200):
+
 ```bash
 curl --location --request GET 'http://localhost:8545/health'
 ```
@@ -94,7 +119,7 @@ func main() {
 	f, err := NewFaucet(
 		static.New(...), // gas estimator
 		http.NewClient(...), // remote address 
-        )
+)
 
 	// The faucet is controlled through a top-level context
 	ctx, cancelFn := context.WithCancel(context.Background())
