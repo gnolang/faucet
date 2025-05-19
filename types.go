@@ -1,6 +1,8 @@
 package faucet
 
-import "net/http"
+import (
+	"net/http"
+)
 
 const (
 	jsonMimeType = "application/json"
@@ -13,20 +15,4 @@ type Middleware func(next http.Handler) http.Handler
 type Handler struct {
 	HandlerFunc http.HandlerFunc
 	Pattern     string
-}
-
-type Requests []Request
-
-// Request is a single Faucet transfer request
-type Request struct {
-	To     string `json:"to"`
-	Amount string `json:"amount"`
-}
-
-type Responses []Response
-
-// Response is a single Faucet transfer response
-type Response struct {
-	Result string `json:"result"`
-	Error  string `json:"error,omitempty"`
 }

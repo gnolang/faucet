@@ -14,6 +14,7 @@ import (
 
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate/static"
+	"github.com/gnolang/faucet/spec"
 	abci "github.com/gnolang/gno/tm2/pkg/bft/abci/types"
 	coreTypes "github.com/gnolang/gno/tm2/pkg/bft/rpc/core/types"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
@@ -25,7 +26,7 @@ import (
 )
 
 // decodeResponse decodes the JSON response
-func decodeResponse[T Response | Responses](t *testing.T, responseBody []byte) *T {
+func decodeResponse[T spec.BaseJSONResponse | spec.BaseJSONResponses](t *testing.T, responseBody []byte) *T {
 	t.Helper()
 
 	var response *T
@@ -88,13 +89,11 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 	var (
 		validAddress = crypto.MustAddressFromString("g155n659f89cfak0zgy575yqma64sm4tv6exqk99")
 
-		singleValidRequest = Request{
-			To: validAddress.String(),
-		}
+		singleValidRequest = spec.NewJSONRequest(0, DefaultDripMethod, []any{validAddress.String()})
 
-		bulkValidRequests = Requests{
-			singleValidRequest,
-			singleValidRequest,
+		bulkValidRequests = spec.BaseJSONRequests{
+			spec.NewJSONRequest(0, DefaultDripMethod, []any{validAddress.String()}),
+			spec.NewJSONRequest(1, DefaultDripMethod, []any{validAddress.String()}),
 		}
 	)
 
@@ -120,7 +119,7 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 	}{
 		{
 			func(resp []byte) {
-				response := decodeResponse[Response](t, resp)
+				response := decodeResponse[spec.BaseJSONResponse](t, resp)
 
 				assert.Empty(t, response.Error)
 				assert.Equal(t, faucetSuccess, response.Result)
@@ -131,7 +130,7 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 		},
 		{
 			func(resp []byte) {
-				responses := decodeResponse[Responses](t, resp)
+				responses := decodeResponse[spec.BaseJSONResponses](t, resp)
 				require.Len(t, *responses, len(bulkValidRequests))
 
 				for _, response := range *responses {
@@ -146,11 +145,10 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 	}
 
 	for _, testCase := range testTable {
-		testCase := testCase
-
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
+			//nolint:dupl // It's fine to leave this setup the same
 			var (
 				requiredFunds = sendAmount.Add(std.NewCoins(gasFee))
 				fundAccount   = crypto.Address{1}
@@ -301,15 +299,11 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 	var (
 		invalidAddress = "invalid-address"
 
-		singleInvalidRequest = Request{
-			To: invalidAddress,
-		}
+		singleInvalidRequest = spec.NewJSONRequest(0, DefaultDripMethod, []any{invalidAddress})
 
-		bulkInvalidRequests = Requests{
+		bulkInvalidRequests = spec.BaseJSONRequests{
 			singleInvalidRequest,
-			Request{
-				To: "", // empty address
-			},
+			spec.NewJSONRequest(1, DefaultDripMethod, []any{"", sendAmount.String()}), // empty address
 		}
 	)
 
@@ -335,10 +329,12 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 	}{
 		{
 			func(resp []byte) {
-				response := decodeResponse[Response](t, resp)
+				response := decodeResponse[spec.BaseJSONResponse](t, resp)
 
-				assert.Contains(t, response.Error, errInvalidBeneficiary.Error())
-				assert.Equal(t, response.Result, unableToHandleRequest)
+				require.NotNil(t, response.Error)
+
+				assert.Contains(t, response.Error.Message, errInvalidBeneficiary.Error())
+				assert.Nil(t, response.Result)
 			},
 			"single request",
 			encodedSingleInvalidRequest,
@@ -346,12 +342,14 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 		},
 		{
 			func(resp []byte) {
-				responses := decodeResponse[Responses](t, resp)
+				responses := decodeResponse[spec.BaseJSONResponses](t, resp)
 				require.Len(t, *responses, len(bulkInvalidRequests))
 
 				for _, response := range *responses {
-					assert.Contains(t, response.Error, errInvalidBeneficiary.Error())
-					assert.Equal(t, response.Result, unableToHandleRequest)
+					require.NotNil(t, response.Error)
+
+					assert.Contains(t, response.Error.Message, errInvalidBeneficiary.Error())
+					assert.Nil(t, response.Result)
 				}
 			},
 			"bulk request",
@@ -361,11 +359,10 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 	}
 
 	for _, testCase := range testTable {
-		testCase := testCase
-
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
+			//nolint:dupl // It's fine to leave this setup the same
 			var (
 				requiredFunds = sendAmount.Add(std.NewCoins(gasFee))
 				fundAccount   = crypto.Address{1}
@@ -513,8 +510,6 @@ func TestFaucet_Serve_MalformedRequests(t *testing.T) {
 	}
 
 	for _, testCase := range testTable {
-		testCase := testCase
-
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -575,9 +570,7 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 	var (
 		validAddress = crypto.MustAddressFromString("g155n659f89cfak0zgy575yqma64sm4tv6exqk99")
 
-		singleValidRequest = Request{
-			To: validAddress.String(),
-		}
+		singleValidRequest = spec.NewJSONRequest(0, DefaultDripMethod, []any{validAddress.String()})
 	)
 
 	encodedSingleValidRequest, err := json.Marshal(
@@ -701,10 +694,11 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 	respBytes, err := io.ReadAll(respRaw.Body)
 	require.NoError(t, err)
 
-	response := decodeResponse[Response](t, respBytes)
+	response := decodeResponse[spec.BaseJSONResponse](t, respBytes)
 
-	assert.Contains(t, response.Error, errNoFundedAccount.Error())
-	assert.Equal(t, response.Result, unableToHandleRequest)
+	require.NotNil(t, response.Error)
+	assert.Contains(t, response.Error.Message, errNoFundedAccount.Error())
+	assert.Nil(t, response.Result)
 
 	// Stop the faucet and wait for it to finish
 	cancelFn()
@@ -735,8 +729,6 @@ func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
 	}
 
 	for _, testCase := range testTable {
-		testCase := testCase
-
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -744,10 +736,11 @@ func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
 				validAddress = crypto.MustAddressFromString("g155n659f89cfak0zgy575yqma64sm4tv6exqk99")
 				gasFee       = std.MustParseCoin("1ugnot")
 
-				singleInvalidRequest = Request{
-					To:     validAddress.String(),
-					Amount: testCase.sendAmount.String(),
-				}
+				singleInvalidRequest = spec.NewJSONRequest(
+					0,
+					DefaultDripMethod,
+					[]any{validAddress.String(), testCase.sendAmount.String()},
+				)
 			)
 
 			encodedSingleInvalidRequest, err := json.Marshal(
@@ -799,10 +792,12 @@ func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
 			respBytes, err := io.ReadAll(respRaw.Body)
 			require.NoError(t, err)
 
-			response := decodeResponse[Response](t, respBytes)
+			response := decodeResponse[spec.BaseJSONResponse](t, respBytes)
 
-			assert.Contains(t, response.Error, errInvalidSendAmount.Error())
-			assert.Equal(t, unableToHandleRequest, response.Result)
+			require.NotNil(t, response.Error)
+
+			assert.Contains(t, response.Error.Message, errInvalidSendAmount.Error())
+			assert.Nil(t, response.Result)
 
 			// Stop the faucet and wait for it to finish
 			cancelFn()
