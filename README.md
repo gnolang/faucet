@@ -119,7 +119,7 @@ func main() {
 	f, err := NewFaucet(
 		static.New(...), // gas estimator
 		http.NewClient(...), // remote address 
-)
+	)
 
 	// The faucet is controlled through a top-level context
 	ctx, cancelFn := context.WithCancel(context.Background())
