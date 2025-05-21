@@ -30,9 +30,12 @@ type Faucet struct {
 
 	mux *chi.Mux // HTTP routing
 
-	config         *config.Config     // faucet configuration
-	middlewares    []Middleware       // request middlewares
-	handlers       []Handler          // request handlers
+	config *config.Config // faucet configuration
+
+	httpMiddlewares []func(http.Handler) http.Handler // http middlewares (http.Handler -> http.Handler)
+	rpcMiddlewares  []Middleware                      // JSON-RPC request middlewares (Handler -> Handler)
+	rpcHandlers     []Handler                         // JSON-RPC request handlers
+
 	prepareTxMsgFn PrepareTxMessageFn // transaction message creator
 
 	maxSendAmount std.Coins // the max send amount per drip
@@ -52,13 +55,13 @@ func NewFaucet(
 		logger:         noopLogger,
 		config:         config.DefaultConfig(),
 		prepareTxMsgFn: defaultPrepareTxMessage,
-		middlewares:    nil, // no middlewares by default
+		rpcMiddlewares: nil, // no rpcMiddlewares by default
 
 		mux: chi.NewMux(),
 	}
 
 	// Set the single default HTTP handler
-	f.handlers = []Handler{
+	f.rpcHandlers = []Handler{
 		{
 			f.defaultHTTPHandler,
 			"/",
@@ -99,11 +102,17 @@ func NewFaucet(
 	// Branch off another route group, so they don't influence
 	// "standard" routes like health
 	f.mux.Group(func(r chi.Router) {
-		for _, h := range f.handlers {
+		// Apply HTTP transport middlewares
+		for _, mw := range f.httpMiddlewares {
+			r.Use(mw)
+		}
+
+		// Apply JSON-RPC request middlewares
+		for _, h := range f.rpcHandlers {
 			r.Post(h.Pattern,
 				wrapJSONRPC(
 					h.HandlerFunc,
-					f.middlewares...,
+					f.rpcMiddlewares...,
 				),
 			)
 		}

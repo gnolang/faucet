@@ -2,6 +2,7 @@ package faucet
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/gnolang/faucet/config"
 )
@@ -22,18 +23,26 @@ func WithConfig(c *config.Config) Option {
 	}
 }
 
-// WithMiddlewares specifies the request middlewares for the faucet.
-// Middlewares are applied for each handler
+// WithMiddlewares specifies the rpc request middlewares for the faucet.
+// Middlewares are applied for each endpoint
 func WithMiddlewares(middlewares []Middleware) Option {
 	return func(f *Faucet) {
-		f.middlewares = middlewares
+		f.rpcMiddlewares = middlewares
 	}
 }
 
-// WithHandlers specifies the HTTP handlers for the faucet
-func WithHandlers(handlers []Handler) Option {
+// WithHTTPMiddlewares specifies the http request middlewares for the faucet.
+// Middlewares are applied for each endpoint
+func WithHTTPMiddlewares(middlewares []func(http.Handler) http.Handler) Option {
 	return func(f *Faucet) {
-		f.handlers = append(f.handlers, handlers...)
+		f.httpMiddlewares = middlewares
+	}
+}
+
+// WithRPCHandlers specifies the HTTP handlers for the faucet
+func WithRPCHandlers(handlers []Handler) Option {
+	return func(f *Faucet) {
+		f.rpcHandlers = append(f.rpcHandlers, handlers...)
 	}
 }
 

@@ -86,7 +86,7 @@ func TestFaucet_NewFaucet(t *testing.T) {
 			&mockEstimator{},
 			&mockClient{},
 			WithConfig(config.DefaultConfig()),
-			WithHandlers(handlers),
+			WithRPCHandlers(handlers),
 		)
 
 		require.NotNil(t, f)
