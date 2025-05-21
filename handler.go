@@ -24,7 +24,7 @@ var (
 	errInvalidMethod      = errors.New("unknown RPC method call")
 )
 
-// wrapJSONRPC wraps the given handler and rpcMiddlewares into a JSON-RPC 2.0 pipeline
+// wrapJSONRPC wraps the given handler and middlewares into a JSON-RPC 2.0 pipeline
 func wrapJSONRPC(handlerFn HandlerFunc, mws ...Middleware) http.HandlerFunc {
 	callChain := chainMiddlewares(mws...)(handlerFn)
 
@@ -60,7 +60,7 @@ func wrapJSONRPC(handlerFn HandlerFunc, mws ...Middleware) http.HandlerFunc {
 			}
 
 			// Parse the request.
-			// This executes all the rpcMiddlewares, and
+			// This executes all the middlewares, and
 			// finally the base handler for the endpoint
 			resp := callChain(ctx, req)
 
@@ -84,7 +84,7 @@ func wrapJSONRPC(handlerFn HandlerFunc, mws ...Middleware) http.HandlerFunc {
 	}
 }
 
-// chainMiddlewares combines the given rpcMiddlewares
+// chainMiddlewares combines the given JSON-RPC middlewares
 func chainMiddlewares(mw ...Middleware) Middleware {
 	return func(final HandlerFunc) HandlerFunc {
 		h := final

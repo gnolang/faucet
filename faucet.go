@@ -55,7 +55,7 @@ func NewFaucet(
 		logger:         noopLogger,
 		config:         config.DefaultConfig(),
 		prepareTxMsgFn: defaultPrepareTxMessage,
-		rpcMiddlewares: nil, // no rpcMiddlewares by default
+		rpcMiddlewares: nil, // no middlewares by default
 
 		mux: chi.NewMux(),
 	}
