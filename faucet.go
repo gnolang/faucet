@@ -99,14 +99,13 @@ func NewFaucet(
 	// Branch off another route group, so they don't influence
 	// "standard" routes like health
 	f.mux.Group(func(r chi.Router) {
-		// Apply user middlewares
-		for _, middleware := range f.middlewares {
-			r.Use(middleware)
-		}
-
-		// Apply standard and custom route handlers
-		for _, handler := range f.handlers {
-			r.Post(handler.Pattern, handler.HandlerFunc)
+		for _, h := range f.handlers {
+			r.Post(h.Pattern,
+				wrapJSONRPC(
+					h.HandlerFunc,
+					f.middlewares...,
+				),
+			)
 		}
 	})
 

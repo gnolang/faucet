@@ -22,7 +22,8 @@ func WithConfig(c *config.Config) Option {
 	}
 }
 
-// WithMiddlewares specifies the request middlewares for the faucet
+// WithMiddlewares specifies the request middlewares for the faucet.
+// Middlewares are applied for each handler
 func WithMiddlewares(middlewares []Middleware) Option {
 	return func(f *Faucet) {
 		f.middlewares = middlewares

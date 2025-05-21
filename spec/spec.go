@@ -8,15 +8,16 @@ const JSONRPCVersion = "2.0"
 // all JSON-RPC requests and responses need to have
 type BaseJSON struct {
 	JSONRPC string `json:"jsonrpc"`
-	ID      uint   `json:"id,omitempty"`
+	ID      uint   `json:"id"`
 }
 
 // BaseJSONRequest defines the base JSON request format
 type BaseJSONRequest struct {
 	BaseJSON
 
-	Method string `json:"method"`
-	Params []any  `json:"params"`
+	Method string          `json:"method"`
+	Params []any           `json:"params"`
+	Meta   json.RawMessage `json:"meta"`
 }
 
 // BaseJSONRequests represents a batch of JSON-RPC requests

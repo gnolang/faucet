@@ -1,10 +1,11 @@
 package faucet
 
 import (
-	"net/http"
+	"context"
 	"testing"
 
 	"github.com/gnolang/faucet/config"
+	"github.com/gnolang/faucet/spec"
 	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
@@ -75,8 +76,8 @@ func TestFaucet_NewFaucet(t *testing.T) {
 		handlers := []Handler{
 			{
 				Pattern: "/hello",
-				HandlerFunc: func(_ http.ResponseWriter, _ *http.Request) {
-					// Empty handler
+				HandlerFunc: func(_ context.Context, _ *spec.BaseJSONRequest) *spec.BaseJSONResponse {
+					return spec.NewJSONResponse(0, nil, nil) // empty handler
 				},
 			},
 		}

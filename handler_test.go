@@ -254,7 +254,7 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 			// Execute the request
 			respRaw, err := http.Post(
 				url,
-				jsonMimeType,
+				JSONMimeType,
 				bytes.NewBuffer(testCase.request),
 			)
 			require.NoError(t, err)
@@ -286,6 +286,212 @@ func TestFaucet_Serve_ValidRequests(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFaucet_Serve_Middleware(t *testing.T) {
+	t.Parallel()
+
+	var (
+		gasFee     = std.MustParseCoin("1ugnot")
+		sendAmount = std.MustParseCoins(config.DefaultMaxSendAmount)
+		id         = uint(10)
+	)
+
+	var (
+		validAddress       = crypto.MustAddressFromString("g155n659f89cfak0zgy575yqma64sm4tv6exqk99")
+		singleValidRequest = spec.NewJSONRequest(id, DefaultDripMethod, []any{validAddress.String()})
+
+		requiredFunds = sendAmount.Add(std.NewCoins(gasFee))
+		fundAccount   = crypto.Address{1}
+	)
+
+	encodedReq, err := json.Marshal(singleValidRequest)
+	require.NoError(t, err)
+
+	getURL := func(addr string) string {
+		return fmt.Sprintf("http://%s", addr)
+	}
+
+	var (
+		mockPubKey = &mockPubKey{
+			addressFn: func() crypto.Address {
+				return fundAccount
+			},
+		}
+		mockPrivKey = &mockPrivKey{
+			signFn: func(_ []byte) ([]byte, error) {
+				return []byte("signature"), nil
+			},
+			pubKeyFn: func() crypto.PubKey {
+				return mockPubKey
+			},
+		}
+		mockKeyring = &mockKeyring{
+			getAddressesFn: func() []crypto.Address {
+				return []crypto.Address{fundAccount}
+			},
+			getKeyFn: func(address crypto.Address) crypto.PrivKey {
+				if address == fundAccount {
+					return mockPrivKey
+				}
+
+				return nil
+			},
+		}
+		mockAccount = &mockAccount{
+			getAddressFn: func() crypto.Address { return fundAccount },
+			getCoinsFn:   func() std.Coins { return requiredFunds },
+		}
+		mockClient = &mockClient{
+			getAccountFn: func(address crypto.Address) (std.Account, error) {
+				if address == fundAccount {
+					return mockAccount, nil
+				}
+
+				return nil, errors.New("account not found")
+			},
+			sendTransactionCommitFn: func(_ *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error) {
+				return &coreTypes.ResultBroadcastTxCommit{
+					CheckTx: abci.ResponseCheckTx{
+						ResponseBase: abci.ResponseBase{Error: nil},
+					},
+					DeliverTx: abci.ResponseDeliverTx{
+						ResponseBase: abci.ResponseBase{Error: nil},
+					},
+				}, nil
+			},
+		}
+	)
+
+	t.Run("all pass", func(t *testing.T) {
+		t.Parallel()
+
+		var (
+			executed = 0
+
+			idMW = func(next HandlerFunc) HandlerFunc {
+				return func(ctx context.Context, req *spec.BaseJSONRequest) *spec.BaseJSONResponse {
+					require.Equal(t, id, req.ID)
+
+					executed++
+
+					return next(ctx, req)
+				}
+			}
+
+			addrMW = func(next HandlerFunc) HandlerFunc {
+				return func(ctx context.Context, req *spec.BaseJSONRequest) *spec.BaseJSONResponse {
+					require.Equal(t, validAddress.String(), req.Params[0].(string))
+
+					executed++
+
+					return next(ctx, req)
+				}
+			}
+		)
+
+		cfg := config.DefaultConfig()
+		cfg.ListenAddress = fmt.Sprintf("127.0.0.1:%d", getFreePort(t))
+
+		f, err := NewFaucet(
+			static.New(gasFee, 100000),
+			mockClient,
+			WithConfig(cfg),
+			WithMiddlewares([]Middleware{idMW, addrMW}),
+		)
+		require.NoError(t, err)
+
+		f.keyring = mockKeyring
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		g, gCtx := errgroup.WithContext(ctx)
+		g.Go(func() error {
+			return f.Serve(gCtx)
+		})
+
+		waitForServer(t, getURL(f.config.ListenAddress))
+
+		resp, err := http.Post(getURL(f.config.ListenAddress), JSONMimeType, bytes.NewBuffer(encodedReq))
+		require.NoError(t, err)
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		r := decodeResponse[spec.BaseJSONResponse](t, body)
+
+		assert.Empty(t, r.Error)
+		assert.Equal(t, faucetSuccess, r.Result)
+		assert.Equal(t, 2, executed)
+
+		cancel()
+		assert.NoError(t, g.Wait())
+	})
+
+	t.Run("middleware fails", func(t *testing.T) {
+		t.Parallel()
+
+		var (
+			executed = 0
+			mwErr    = errors.New("middleware error")
+
+			failMW = func(_ HandlerFunc) HandlerFunc {
+				return func(_ context.Context, req *spec.BaseJSONRequest) *spec.BaseJSONResponse {
+					return spec.NewJSONResponse(
+						req.ID,
+						nil,
+						spec.NewJSONError(mwErr.Error(), spec.ServerErrorCode),
+					)
+				}
+			}
+
+			idMW = func(next HandlerFunc) HandlerFunc {
+				return func(ctx context.Context, req *spec.BaseJSONRequest) *spec.BaseJSONResponse {
+					executed++
+
+					return next(ctx, req)
+				}
+			}
+		)
+
+		cfg := config.DefaultConfig()
+		cfg.ListenAddress = fmt.Sprintf("127.0.0.1:%d", getFreePort(t))
+
+		f, err := NewFaucet(
+			static.New(gasFee, 100000),
+			mockClient,
+			WithConfig(cfg),
+			WithMiddlewares([]Middleware{failMW, idMW}), // first mw should fail
+		)
+		require.NoError(t, err)
+
+		f.keyring = mockKeyring
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		g, gCtx := errgroup.WithContext(ctx)
+		g.Go(func() error { return f.Serve(gCtx) })
+
+		waitForServer(t, getURL(f.config.ListenAddress))
+
+		resp, err := http.Post(getURL(f.config.ListenAddress), JSONMimeType, bytes.NewBuffer(encodedReq))
+		require.NoError(t, err)
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		r := decodeResponse[spec.BaseJSONResponse](t, body)
+
+		require.NotEmpty(t, r.Error)
+
+		assert.Equal(t, mwErr.Error(), r.Error.Message)
+		assert.Equal(t, 0, executed)
+
+		cancel()
+		assert.NoError(t, g.Wait())
+	})
 }
 
 func TestFaucet_Serve_InvalidRequests(t *testing.T) {
@@ -468,7 +674,7 @@ func TestFaucet_Serve_InvalidRequests(t *testing.T) {
 			// Execute the request
 			respRaw, err := http.Post(
 				url,
-				jsonMimeType,
+				JSONMimeType,
 				bytes.NewBuffer(testCase.request),
 			)
 			require.NoError(t, err)
@@ -544,7 +750,7 @@ func TestFaucet_Serve_MalformedRequests(t *testing.T) {
 			// Execute the request
 			respRaw, err := http.Post(
 				url,
-				jsonMimeType,
+				JSONMimeType,
 				bytes.NewBuffer(testCase.request),
 			)
 			require.NoError(t, err)
@@ -686,7 +892,7 @@ func TestFaucet_Serve_NoFundedAccounts(t *testing.T) {
 	// Execute the request
 	respRaw, err := http.Post(
 		url,
-		jsonMimeType,
+		JSONMimeType,
 		bytes.NewBuffer(encodedSingleValidRequest),
 	)
 	require.NoError(t, err)
@@ -784,7 +990,7 @@ func TestFaucet_Serve_InvalidSendAmount(t *testing.T) {
 			// Execute the request
 			respRaw, err := http.Post(
 				url,
-				jsonMimeType,
+				JSONMimeType,
 				bytes.NewBuffer(encodedSingleInvalidRequest),
 			)
 			require.NoError(t, err)

@@ -1,6 +1,8 @@
 package faucet
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -8,16 +10,11 @@ import (
 	"regexp"
 
 	"github.com/gnolang/faucet/spec"
-	"github.com/gnolang/faucet/writer"
-	httpWriter "github.com/gnolang/faucet/writer/http"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
 )
 
-const (
-	unableToHandleRequest = "unable to handle faucet request"
-	faucetSuccess         = "successfully executed faucet transfer"
-)
+const faucetSuccess = "successfully executed faucet transfer"
 
 const DefaultDripMethod = "drip" // the default JSON-RPC method for a faucet drip
 
@@ -26,6 +23,96 @@ var (
 	errInvalidSendAmount  = errors.New("invalid send amount")
 	errInvalidMethod      = errors.New("unknown RPC method call")
 )
+
+// wrapJSONRPC wraps the given handler and middlewares into a JSON-RPC 2.0 pipeline
+func wrapJSONRPC(handlerFn HandlerFunc, mws ...Middleware) http.HandlerFunc {
+	callChain := chainMiddlewares(mws...)(handlerFn)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Grab the request(s)
+		requests, err := parseRequests(r.Body)
+		if err != nil {
+			http.Error(
+				w,
+				fmt.Sprintf("unable to read request: %s", err.Error()),
+				http.StatusBadRequest,
+			)
+
+			return
+		}
+
+		var (
+			ctx = r.Context()
+
+			responses = make(spec.BaseJSONResponses, 0)
+		)
+
+		for _, req := range requests {
+			// Make sure it's a valid base request
+			if !spec.IsValidBaseRequest(req) {
+				responses = append(responses, spec.NewJSONResponse(
+					req.ID,
+					nil,
+					spec.NewJSONError("invalid JSON-RPC 2.0 request", spec.InvalidRequestErrorCode),
+				))
+
+				continue
+			}
+
+			// Parse the request.
+			// This executes all the middlewares, and
+			// finally the base handler for the endpoint
+			resp := callChain(ctx, req)
+
+			responses = append(responses, resp)
+		}
+
+		w.Header().Set("Content-Type", JSONMimeType)
+
+		// Create the encoder
+		enc := json.NewEncoder(w)
+
+		if len(responses) == 1 {
+			// Write the JSON response as a single response
+			_ = enc.Encode(responses[0]) //nolint:errcheck // Fine to leave unchecked
+
+			return
+		}
+
+		// Write the JSON response as a batch
+		_ = enc.Encode(responses) //nolint:errcheck // Fine to leave unchecked
+	}
+}
+
+// chainMiddlewares combines the given middlewares
+func chainMiddlewares(mw ...Middleware) Middleware {
+	return func(final HandlerFunc) HandlerFunc {
+		h := final
+
+		for i := len(mw) - 1; i >= 0; i-- {
+			h = mw[i](h)
+		}
+
+		return h
+	}
+}
+
+// parseRequests parses the JSON-RPC requests from the request body
+func parseRequests(body io.Reader) (spec.BaseJSONRequests, error) {
+	// Load the requests
+	requestBody, readErr := io.ReadAll(body)
+	if readErr != nil {
+		return nil, fmt.Errorf("unable to read request: %w", readErr)
+	}
+
+	// Extract the requests
+	requests, err := spec.ExtractBaseRequests(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("invalid request body: %w", err)
+	}
+
+	return requests, nil
+}
 
 // drip is a single Faucet transfer request
 type drip struct {
@@ -36,72 +123,7 @@ type drip struct {
 var amountRegex = regexp.MustCompile(`^\d+ugnot$`)
 
 // defaultHTTPHandler is the default faucet transfer handler
-func (f *Faucet) defaultHTTPHandler(w http.ResponseWriter, r *http.Request) {
-	// Load the requests
-	requestBody, readErr := io.ReadAll(r.Body)
-	if readErr != nil {
-		http.Error(
-			w,
-			"unable to read request",
-			http.StatusBadRequest,
-		)
-
-		return
-	}
-
-	// Extract the requests
-	requests, err := spec.ExtractBaseRequests(requestBody)
-	if err != nil {
-		http.Error(
-			w,
-			"invalid request body",
-			http.StatusBadRequest,
-		)
-
-		return
-	}
-
-	// Handle the requests
-	w.Header().Set("Content-Type", jsonMimeType)
-	f.handleRequest(
-		httpWriter.New(f.logger, w),
-		requests,
-	)
-}
-
-// handleRequest is the common default faucet handler
-func (f *Faucet) handleRequest(writer writer.ResponseWriter, requests spec.BaseJSONRequests) {
-	// Parse all JSON-RPC requests
-	responses := make(spec.BaseJSONResponses, len(requests))
-
-	for i, req := range requests {
-		f.logger.Debug("incoming request", "request", req)
-
-		responses[i] = f.handleSingleRequest(req)
-	}
-
-	if len(responses) == 1 {
-		// Write the JSON response as a single response
-		writer.WriteResponse(responses[0])
-
-		return
-	}
-
-	// Write the JSON response as a batch
-	writer.WriteResponse(responses)
-}
-
-// handleSingleRequest validates and executes one drip request
-func (f *Faucet) handleSingleRequest(req *spec.BaseJSONRequest) *spec.BaseJSONResponse {
-	// Make sure it's a valid base request
-	if !spec.IsValidBaseRequest(req) {
-		return spec.NewJSONResponse(
-			req.ID,
-			nil,
-			spec.NewJSONError("invalid JSON-RPC 2.0 request", spec.InvalidRequestErrorCode),
-		)
-	}
-
+func (f *Faucet) defaultHTTPHandler(_ context.Context, req *spec.BaseJSONRequest) *spec.BaseJSONResponse {
 	// Make sure the method call on "/" is "drip"
 	if req.Method != DefaultDripMethod {
 		return spec.NewJSONResponse(
