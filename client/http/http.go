@@ -64,5 +64,6 @@ func (c *Client) SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadcastTx
 
 func (c *Client) Ping() error {
 	_, err := c.client.Health()
+
 	return err
 }

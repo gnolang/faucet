@@ -175,6 +175,7 @@ func (m *mockClient) Ping() error {
 	if m.pingFn != nil {
 		return m.pingFn()
 	}
+
 	return nil
 }
 
