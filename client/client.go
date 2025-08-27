@@ -22,4 +22,8 @@ type Client interface {
 	// SendTransactionCommit sends the specified transaction to the network,
 	// and wait for it to be committed to the chain
 	SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error)
+
+	// Ping calls the simplest element on the implementation that is able
+	// to tell if it is still alive. If there is any problem, it returns an error.
+	Ping() error
 }

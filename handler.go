@@ -8,10 +8,13 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"time"
 
-	"github.com/gnolang/faucet/spec"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
+	"github.com/go-chi/render"
+
+	"github.com/gnolang/faucet/spec"
 )
 
 const faucetSuccess = "successfully executed faucet transfer"
@@ -214,6 +217,35 @@ func extractDripRequest(params []any) (*drip, error) {
 }
 
 // healthcheckHandler is the default health check handler for the faucet
-func (f *Faucet) healthcheckHandler(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (f *Faucet) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusOK)
+}
+
+// readycheckHandler is the default ready check handler for the faucet
+func (f *Faucet) readycheckHandler(w http.ResponseWriter, r *http.Request) {
+	err := f.client.Ping()
+	if err != nil {
+		render.JSON(w, r, &response{
+			Message: fmt.Sprintf("node not ready: %s", err.Error()),
+			Info: map[string]any{
+				"time": time.Now().String(),
+			},
+		})
+
+		render.Status(r, http.StatusInternalServerError)
+
+		return
+	}
+
+	render.JSON(w, r, &response{
+		Message: "node is ready",
+		Info: map[string]any{
+			"time": time.Now().String(),
+		},
+	})
+}
+
+type response struct {
+	Info    map[string]any `json:"info"`
+	Message string         `json:"message"`
 }

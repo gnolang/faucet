@@ -137,12 +137,14 @@ type (
 	getAccountDelegate            func(crypto.Address) (std.Account, error)
 	sendTransactionSyncDelegate   func(tx *std.Tx) (*coreTypes.ResultBroadcastTx, error)
 	sendTransactionCommitDelegate func(tx *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error)
+	pingDelegate                  func() error
 )
 
 type mockClient struct {
 	getAccountFn            getAccountDelegate
 	sendTransactionSyncFn   sendTransactionSyncDelegate
 	sendTransactionCommitFn sendTransactionCommitDelegate
+	pingFn                  pingDelegate
 }
 
 func (m *mockClient) GetAccount(address crypto.Address) (std.Account, error) {
@@ -167,6 +169,13 @@ func (m *mockClient) SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadca
 	}
 
 	return nil, nil
+}
+
+func (m *mockClient) Ping() error {
+	if m.pingFn != nil {
+		return m.pingFn()
+	}
+	return nil
 }
 
 type (

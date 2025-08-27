@@ -10,15 +10,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gnolang/gno/tm2/pkg/std"
+	"github.com/go-chi/chi/v5"
+	"github.com/rs/cors"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/gnolang/faucet/client"
 	"github.com/gnolang/faucet/config"
 	"github.com/gnolang/faucet/estimate"
 	"github.com/gnolang/faucet/keyring"
 	"github.com/gnolang/faucet/keyring/memory"
-	"github.com/gnolang/gno/tm2/pkg/std"
-	"github.com/go-chi/chi/v5"
-	"github.com/rs/cors"
-	"golang.org/x/sync/errgroup"
 )
 
 // Faucet is a standard Gno faucet
@@ -98,6 +99,7 @@ func NewFaucet(
 
 	// Register the health check handler
 	f.mux.Get("/health", f.healthcheckHandler)
+	f.mux.Get("/ready", f.readycheckHandler)
 
 	// Branch off another route group, so they don't influence
 	// "standard" routes like health
