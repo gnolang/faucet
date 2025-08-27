@@ -217,7 +217,7 @@ func extractDripRequest(params []any) (*drip, error) {
 }
 
 // healthcheckHandler is the default health check handler for the faucet
-func (f *Faucet) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+func (f *Faucet) healthcheckHandler(_ http.ResponseWriter, r *http.Request) {
 	render.Status(r, http.StatusOK)
 }
 
