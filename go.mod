@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/gnolang/gno v0.0.0-20250519180655-e90525b0ebf2
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.11.1
