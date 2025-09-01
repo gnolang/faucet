@@ -23,7 +23,6 @@ type Client interface {
 	// and wait for it to be committed to the chain
 	SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error)
 
-	// Ping calls the simplest element on the implementation that is able
-	// to tell if it is still alive. If there is any problem, it returns an error.
-	Ping() error
+	// Status fetches the node's latest status
+	Status() (*coreTypes.ResultStatus, error)
 }

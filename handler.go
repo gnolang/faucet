@@ -223,7 +223,8 @@ func (f *Faucet) healthcheckHandler(_ http.ResponseWriter, r *http.Request) {
 
 // readycheckHandler is the default ready check handler for the faucet
 func (f *Faucet) readycheckHandler(w http.ResponseWriter, r *http.Request) {
-	err := f.client.Ping()
+	// Grab the node's status
+	status, err := f.client.Status()
 	if err != nil {
 		render.JSON(w, r, &response{
 			Message: fmt.Sprintf("node not ready: %s", err.Error()),
@@ -240,7 +241,8 @@ func (f *Faucet) readycheckHandler(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &response{
 		Message: "node is ready",
 		Info: map[string]any{
-			"time": time.Now().String(),
+			"height": status.SyncInfo.LatestBlockHeight,
+			"time":   time.Now().String(),
 		},
 	})
 }
