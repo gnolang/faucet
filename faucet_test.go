@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gnolang/faucet/config"
-	"github.com/gnolang/faucet/spec"
 	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gnolang/faucet/config"
+	"github.com/gnolang/faucet/spec"
 )
 
 func TestFaucet_NewFaucet(t *testing.T) {
@@ -94,7 +95,7 @@ func TestFaucet_NewFaucet(t *testing.T) {
 
 		// Make sure the handler was set
 		routes := f.mux.Routes()
-		require.Len(t, routes, len(handlers)+2) // base "/" & "/health" handlers as well
+		require.Len(t, routes, len(handlers)+3) // base "/", "/ready" & "/health" handlers as well
 
 		assert.Equal(t, handlers[0].Pattern, routes[2].Pattern)
 	})
