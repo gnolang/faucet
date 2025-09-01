@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gnolang/gno/tm2/pkg/amino"
@@ -30,7 +31,7 @@ func NewClient(remote string) (*Client, error) {
 func (c *Client) GetAccount(address crypto.Address) (std.Account, error) {
 	path := fmt.Sprintf("auth/accounts/%s", address.String())
 
-	queryResponse, err := c.client.ABCIQuery(path, []byte{})
+	queryResponse, err := c.client.ABCIQuery(context.Background(), path, []byte{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute ABCI query, %w", err)
 	}
@@ -50,7 +51,7 @@ func (c *Client) SendTransactionSync(tx *std.Tx) (*coreTypes.ResultBroadcastTx, 
 		return nil, fmt.Errorf("unable to marshal transaction, %w", err)
 	}
 
-	return c.client.BroadcastTxSync(aminoTx)
+	return c.client.BroadcastTxSync(context.Background(), aminoTx)
 }
 
 func (c *Client) SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadcastTxCommit, error) {
@@ -59,11 +60,11 @@ func (c *Client) SendTransactionCommit(tx *std.Tx) (*coreTypes.ResultBroadcastTx
 		return nil, fmt.Errorf("unable to marshal transaction, %w", err)
 	}
 
-	return c.client.BroadcastTxCommit(aminoTx)
+	return c.client.BroadcastTxCommit(context.Background(), aminoTx)
 }
 
 func (c *Client) Ping() error {
-	_, err := c.client.Health()
+	_, err := c.client.Health(context.Background())
 
 	return err
 }
