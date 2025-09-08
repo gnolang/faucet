@@ -1,6 +1,6 @@
 module github.com/gnolang/faucet
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.2
 
@@ -11,7 +11,7 @@ require (
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.17.0
 )
 
 require (
